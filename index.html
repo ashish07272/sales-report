@@ -18,7 +18,7 @@
       margin: 20px auto;
     }
     table {
-      width: 80%;
+      width: 90%;
       margin: 0 auto;
       border-collapse: collapse;
       background: #fff;
@@ -36,10 +36,29 @@
     tr:nth-child(even) {
       background-color: #f2f2f2;
     }
+    #login {
+      text-align: center;
+      margin-top: 100px;
+    }
+    #passwordInput {
+      padding: 10px;
+      font-size: 16px;
+    }
+    #submitBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
 
+<div id="login">
+  <h2>Enter Password to View Report</h2>
+  <input type="password" id="passwordInput" placeholder="Enter Password">
+  <button id="submitBtn">Submit</button>
+</div>
+
+<div id="report" style="display:none;">
   <h2>Retailer Wise SIM Sale Report</h2>
   <input type="file" id="upload" accept=".xlsx, .xls" />
 
@@ -52,35 +71,46 @@
     </thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <script>
-    document.getElementById('upload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+<script>
+  document.getElementById('submitBtn').addEventListener('click', function() {
+    const enteredPassword = document.getElementById('passwordInput').value;
+    if (enteredPassword === "007272") {
+      document.getElementById('login').style.display = "none";
+      document.getElementById('report').style.display = "block";
+    } else {
+      alert("Incorrect password!");
+    }
+  });
 
-      reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet);
+  document.getElementById('upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
 
-        const countMap = {};
-        json.forEach(row => {
-          const name = row['Retailer Name'] || 'Unknown';
-          countMap[name] = (countMap[name] || 0) + 1;
-        });
+    reader.onload = function(event) {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
 
-        const tbody = document.querySelector('#resultTable tbody');
-        tbody.innerHTML = '';
+      const countMap = {};
+      json.forEach(row => {
+        const name = row['Retailer Name'] || 'Unknown';
+        countMap[name] = (countMap[name] || 0) + 1;
+      });
 
-        Object.entries(countMap).forEach(([name, count]) => {
-          const row = `<tr><td>${name}</td><td>${count}</td></tr>`;
-          tbody.insertAdjacentHTML('beforeend', row);
-        });
-      };
+      const tbody = document.querySelector('#resultTable tbody');
+      tbody.innerHTML = '';
 
-      reader.readAsArrayBuffer(file);
-    });
-  </script>
+      Object.entries(countMap).forEach(([name, count]) => {
+        const row = `<tr><td>${name}</td><td>${count}</td></tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+      });
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+</script>
 </body>
 </html>
