@@ -1,20 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Retailer SIM Sale</title>
+  <meta charset="UTF-8">
+  <title>Retailer Wise SIM Sale</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+    }
+    input[type="file"] {
+      display: block;
+      margin: 20px auto;
+    }
+    table {
+      width: 80%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
 <body>
-  <script>
-    const correctPassword = "007272"; // CHANGE THIS
-    const userPassword = prompt("Enter password to access the page:");
-    if (userPassword !== correctPassword) {
-      document.body.innerHTML = "<h1 style='text-align:center; color:red;'>Access Denied</h1>";
-      throw new Error("Incorrect password");
-    }
-  </script>
 
-  <!-- Your existing content here -->
-  <h1>Retailer SIM Sale Report</h1>
-  <!-- ... -->
+  <h2>Retailer Wise SIM Sale Report</h2>
+  <input type="file" id="upload" accept=".xlsx, .xls" />
+
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th>Retailer Name</th>
+        <th>SIM Sale Count</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    document.getElementById('upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        const countMap = {};
+        json.forEach(row => {
+          const name = row['Retailer Name'] || 'Unknown';
+          countMap[name] = (countMap[name] || 0) + 1;
+        });
+
+        const tbody = document.querySelector('#resultTable tbody');
+        tbody.innerHTML = '';
+
+        Object.entries(countMap).forEach(([name, count]) => {
+          const row = `<tr><td>${name}</td><td>${count}</td></tr>`;
+          tbody.insertAdjacentHTML('beforeend', row);
+        });
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+  </script>
 </body>
 </html>
