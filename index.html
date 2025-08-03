@@ -1,792 +1,269 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIM Sale Report + Number Sum</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --primary-color: #d9534f;
-      --sim-bg-light: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);
-      --sim-bg-dark: linear-gradient(135deg, #d4ac0d 0%, #c0392b 100%);
-      --number-bg-light: linear-gradient(135deg, #c0392b 0%, #f39c12 100%);
-      --number-bg-dark: linear-gradient(135deg, #a93226 0%, #d68910 100%);
-      --background-gradient: linear-gradient(135deg, #f8d7da 0%, #e8a6a6 100%);
-      --dark-bg-gradient: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-      --text-color: #333;
-      --dark-text-color: #e2e8f0;
-      --card-bg: rgba(255, 255, 255, 0.8);
-      --dark-card-bg: rgba(45, 55, 72, 0.8);
-      --shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
-      --border-radius: 12px;
-    }
-
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      min-height: 100vh;
-      background: var(--background-gradient);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0;
-      color: var(--text-color);
-      transition: background 0.3s, color 0.3s;
-      position: relative;
-    }
-
-    body.dark {
-      background: var(--dark-bg-gradient);
-      color: var(--dark-text-color);
-    }
-
-    .container {
-      max-width: 900px;
-      background: var(--card-bg);
-      backdrop-filter: blur(10px);
-      padding: 30px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      margin: 20px;
-      animation: fadeIn 0.5s ease-out;
-      display: none;
-    }
-
-    body.dark .container {
-      background: var(--dark-card-bg);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    h2, h3 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .tabs {
-      display: flex;
-      border-bottom: 2px solid #ccc;
-      margin-bottom: 20px;
-    }
-
-    .tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      font-weight: bold;
-      cursor: pointer;
-      color: var(--text-color);
-      transition: all 0.3s;
-    }
-
-    body.dark .tab {
-      color: var(--dark-text-color);
-    }
-
-    .tab.active {
-      color: var(--primary-color);
-      border-bottom: 2px solid var(--primary-color);
-    }
-
-    .tab:hover {
-      background: rgba(217, 83, 79, 0.1);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .box {
-      padding: 20px;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .box:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    #simSection .box {
-      background: var(--sim-bg-light);
-      border: 2px solid #e67e22;
-    }
-
-    body.dark #simSection .box {
-      background: var(--sim-bg-dark);
-      border: 2px solid #c0392b;
-    }
-
-    #simSection h3, #simSection button {
-      color: #fff;
-    }
-
-    #mobileSection .box {
-      background: var(--number-bg-light);
-      border: 2px solid #c0392b;
-    }
-
-    body.dark #mobileSection .box {
-      background: var(--number-bg-dark);
-      border: 2px solid #a93226;
-    }
-
-    #mobileSection h3, #mobileSection button {
-      color: #fff;
-    }
-
-    input[type="file"], input[type="tel"], input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 50px;
-      background: #fff;
-      font-size: 16px;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin: 10px 0;
-      transition: box-shadow 0.3s;
-    }
-
-    body.dark input[type="file"], body.dark input[type="tel"], body.dark input[type="password"] {
-      background: #4a5568;
-      color: var(--dark-text-color);
-    }
-
-    input[type="file"]::-webkit-file-upload-button {
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 50px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-
-    input[type="file"]::-webkit-file-upload-button:hover {
-      background: #c9302c;
-    }
-
-    input:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.3);
-    }
-
-    button {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 50px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 10px 0;
-      transition: transform 0.3s, background 0.3s;
-    }
-
-    #simSection button {
-      background: #f1c40f;
-    }
-
-    #simSection button:hover {
-      background: #e67e22;
-      transform: scale(1.05);
-    }
-
-    #mobileSection button {
-      background: #c0392b;
-    }
-
-    #mobileSection button:hover {
-      background: #f39c12;
-      transform: scale(1.05);
-    }
-
-    button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-
-    .download-btn {
-      background: #e67e22;
-    }
-
-    .download-btn:hover {
-      background: #d35400;
-    }
-
-    .reset-btn {
-      background: #6c757d;
-    }
-
-    .reset-btn:hover {
-      background: #5a6268;
-    }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid var(--primary-color);
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: #fff;
-    }
-
-    body.dark table {
-      background: #4a5568;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-
-    #simSection th {
-      background: #f1c40f;
-      color: #fff;
-    }
-
-    body.dark #simSection th {
-      background: #d4ac0d;
-    }
-
-    #simSection tr.retailer-row {
-      background: #fef5e7;
-      font-weight: bold;
-    }
-
-    body.dark #simSection tr.retailer-row {
-      background: #3c2f2f;
-    }
-
-    #simSection .date-heading {
-      background: #f1c40f;
-      color: #fff;
-      font-weight: bold;
-      padding: 10px;
-      border-radius: var(--border-radius);
-      margin: 10px 0;
-    }
-
-    body.dark #simSection .date-heading {
-      background: #d4ac0d;
-    }
-
-    #result {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      color: #fff;
-      min-height: 50px;
-      white-space: pre-wrap;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    .modal-content {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-    }
-
-    body.dark .modal-content {
-      background: var(--dark-card-bg);
-    }
-
-    .modal h2 {
-      color: var(--primary-color);
-    }
-
-    .modal input {
-      margin-bottom: 20px;
-    }
-
-    .modal button {
-      background: var(--primary-color);
-    }
-
-    .modal button:hover {
-      background: #c9302c;
-      transform: scale(1.05);
-    }
-
-    .error {
-      color: #dc3545;
-      margin-top: 10px;
-      display: none;
-    }
-
-    .dark-mode-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fff;
-      padding: 10px;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s;
-      z-index: 1000;
-    }
-
-    body.dark .dark-mode-toggle {
-      background: #4a5568;
-    }
-
-    .dark-mode-toggle svg {
-      width: 24px;
-      height: 24px;
-      fill: var(--text-color);
-    }
-
-    body.dark .dark-mode-toggle svg {
-      fill: var(--dark-text-color);
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        margin: 10px;
-        padding: 20px;
-      }
-      .tabs {
-        flex-direction: column;
-      }
-      .tab {
-        padding: 8px;
-      }
-      .dark-mode-toggle {
-        top: 10px;
-        right: 10px;
-      }
-      .box {
-        padding: 15px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <!-- Dark Mode Toggle -->
-  <button class="dark-mode-toggle" aria-label="Toggle dark mode">
-    <svg viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
-  </button>
-
-  <!-- Password Modal -->
-  <div id="passwordModal" class="modal">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <h2 id="modalTitle">पासवर्ड दर्ज करें</h2>
-      <input type="password" id="passwordInput" placeholder="पासवर्ड" aria-label="पासवर्ड दर्ज करें" autofocus>
-      <button id="submitPassword">जमा करें</button>
-      <p id="passwordError" class="error">गलत पासवर्ड!</p>
-    </div>
-  </div>
-
-  <!-- Main Content -->
-  <div id="mainContent" class="container">
-    <h2>SIM Sale Report + Number Sum</h2>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <div id="simTab" class="tab active">SIM Sale Report</div>
-      <div id="mobileTab" class="tab">Number Sum</div>
-    </div>
-
-    <!-- SIM Sale Report Section -->
-    <div id="simSection" class="tab-content active">
-      <div class="box" role="region" aria-label="SIM Sale Report">
-        <h3>SIM Sale Report (Type-wise Count)</h3>
-        <input type="file" id="upload" accept=".xlsx, .xls" aria-label="Excel फ़ाइल अपलोड करें">
-        <button id="processSimBtn">रिपोर्ट जनरेट करें</button>
-        <div id="tableContainer"></div>
-      </div>
-    </div>
-
-    <!-- Number Sum Section -->
-    <div id="mobileSection" class="tab-content">
-      <div class="box" role="region" aria-label="Number Sum">
-        <h3>ॐ गणेशाय नमः</h3>
-        <p>मोबाइल नंबर के अंकों का एकल-अंकीय योग निकालें</p>
-        <input type="tel" id="mobileNumber" placeholder="मोबाइल नंबर (10 अंक)" pattern="[6-9][0-9]{9}" maxlength="10" aria-label="10 अंकों का मोबाइल नंबर दर्ज करें">
-        <button id="calculateBtn">एकल-अंकीय योग निकालें</button>
-        <div style="display: flex; align-items: center; margin: 20px 0;">
-          <div style="flex-grow: 1; border-top: 1px solid #ccc;"></div>
-          <span style="margin: 0 10px; font-weight: bold; color: var(--text-color);">या</span>
-          <div style="flex-grow: 1; border-top: 1px solid #ccc;"></div>
-        </div>
-        <input type="file" id="excelFile" accept=".xlsx, .xls" aria-label="Excel फ़ाइल अपलोड करें">
-        <button id="processExcelBtn">Excel से एकल-अंकीय योग निकालें</button>
-        <div id="result"></div>
-      </div>
-    </div>
-
-    <button id="resetBtn" class="reset-btn">साफ करें</button>
-  </div>
-
-  <script type="module">
-    // State management
-    const state = {
-      isLoading: false,
-      result: '',
-      rawData: [],
-      activeTab: 'sim',
-      isAuthenticated: false,
-    };
-
-    // DOM elements
-    const elements = {
-      passwordModal: document.getElementById('passwordModal'),
-      passwordInput: document.getElementById('passwordInput'),
-      submitPassword: document.getElementById('submitPassword'),
-      passwordError: document.getElementById('passwordError'),
-      mainContent: document.getElementById('mainContent'),
-      simTab: document.getElementById('simTab'),
-      mobileTab: document.getElementById('mobileTab'),
-      simSection: document.getElementById('simSection'),
-      mobileSection: document.getElementById('mobileSection'),
-      upload: document.getElementById('upload'),
-      processSimBtn: document.getElementById('processSimBtn'),
-      tableContainer: document.getElementById('tableContainer'),
-      mobileNumber: document.getElementById('mobileNumber'),
-      excelFile: document.getElementById('excelFile'),
-      calculateBtn: document.getElementById('calculateBtn'),
-      processExcelBtn: document.getElementById('processExcelBtn'),
-      resetBtn: document.getElementById('resetBtn'),
-      resultDiv: document.getElementById('result'),
-      darkModeToggle: document.querySelector('.dark-mode-toggle'),
-    };
-
-    // Password protection
-    const correctPassword = '007272';
-    const checkPassword = () => {
-      elements.passwordError.style.display = 'none';
-      if (elements.passwordInput.value === correctPassword) {
-        state.isAuthenticated = true;
-        elements.passwordModal.style.display = 'none';
-        elements.mainContent.style.display = 'block';
-      } else {
-        elements.passwordError.style.display = 'block';
-        elements.passwordInput.value = '';
-        elements.passwordInput.focus();
-      }
-    };
-
-    // Initialize modal
-    elements.passwordModal.style.display = 'flex';
-    elements.mainContent.style.display = 'none';
-    elements.passwordInput.focus();
-
-    elements.submitPassword.addEventListener('click', checkPassword);
-    elements.passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkPassword();
-    });
-
-    // Tab switching
-    const switchTab = (tab) => {
-      state.activeTab = tab;
-      elements.simTab.classList.toggle('active', tab === 'sim');
-      elements.mobileTab.classList.toggle('active', tab === 'mobile');
-      elements.simSection.classList.toggle('active', tab === 'sim');
-      elements.mobileSection.classList.toggle('active', tab === 'mobile');
-    };
-
-    elements.simTab.addEventListener('click', () => switchTab('sim'));
-    elements.mobileTab.addEventListener('click', () => switchTab('mobile'));
-
-    // Validation
-    const isValidMobileNumber = (number) => /^[6-9]\d{9}$/.test(number);
-
-    // Calculate single-digit sum
-    const getSingleDigitSum = (numberString) => {
-      if (!/^\d+$/.test(numberString)) return null;
-      let sum = numberString.split('').reduce((acc, digit) => acc + parseInt(digit), 0);
-      while (sum >= 10) {
-        sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
-      }
-      return sum;
-    };
-
-    // Update UI
-    const updateUI = () => {
-      elements.resultDiv.innerText = state.result;
-      elements.calculateBtn.disabled = state.isLoading;
-      elements.processExcelBtn.disabled = state.isLoading;
-      elements.processSimBtn.disabled = state.isLoading;
-      elements.calculateBtn.innerHTML = state.isLoading ? '<span class="spinner"></span>' : 'एकल-अंकीय योग निकालें';
-      elements.processExcelBtn.innerHTML = state.isLoading ? '<span class="spinner"></span>' : 'Excel से एकल-अंकीय योग निकालें';
-      elements.processSimBtn.innerHTML = state.isLoading ? '<span class="spinner"></span>' : 'रिपोर्ट जनरेट करें';
-    };
-
-    // SIM Sale Report
-    const processSimReport = async () => {
-      const file = elements.upload.files[0];
-      if (!file) {
-        elements.tableContainer.innerHTML = '<p style="color: #fff; text-align: center;">कृपया एक Excel फ़ाइल चुनें।</p>';
-        return;
-      }
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-        elements.tableContainer.innerHTML = '<p style="color: #fff; text-align: center;">कृपया केवल .xlsx या .xls फ़ाइल अपलोड करें।</p>';
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        elements.tableContainer.innerHTML = '<p style="color: #fff; text-align: center;">फ़ाइल का आकार 5MB से कम होना चाहिए।</p>';
-        return;
-      }
-
-      state.isLoading = true;
-      updateUI();
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        state.rawData = XLSX.utils.sheet_to_json(sheet);
-        displaySimData();
-      } catch (error) {
-        elements.tableContainer.innerHTML = `<p style="color: #fff; text-align: center;">फ़ाइल पढ़ने में त्रुटि हुई: ${error.message}</p>`;
-      } finally {
-        state.isLoading = false;
-        updateUI();
-      }
-    };
-
-    const displaySimData = () => {
-      const grouped = {};
-      const cafTypesSet = new Set();
-
-      state.rawData.forEach(row => {
-        const date = row['Date'] ? new Date(row['Date']).toLocaleDateString('en-IN') : 'Unknown';
-        const retailer = row['Retailer Name'] || 'Unknown';
-        const type = (row['Type of CAF'] || '').toUpperCase();
-        cafTypesSet.add(type);
-
-        if (!grouped[date]) grouped[date] = {};
-        if (!grouped[date][retailer]) grouped[date][retailer] = {};
-
-        grouped[date][retailer][type] = (grouped[date][retailer][type] || 0) + 1;
-      });
-
-      const cafTypes = Array.from(cafTypesSet);
-      let html = '';
-
-      Object.keys(grouped).forEach(date => {
-        html += `<h3 class="date-heading">${date}</h3>`;
-        html += '<table><thead><tr><th>Retailer Name</th>';
-        cafTypes.forEach(type => {
-          html += `<th>${type}</th>`;
-        });
-        html += '<th>Total</th></tr></thead><tbody>';
-
-        const totals = new Array(cafTypes.length).fill(0);
-        let grandTotal = 0;
-
-        Object.keys(grouped[date]).forEach(retailer => {
-          html += `<tr class="retailer-row"><td>${retailer}</td>`;
-          let rowTotal = 0;
-          cafTypes.forEach((type, i) => {
-            const count = grouped[date][retailer][type] || 0;
-            rowTotal += count;
-            totals[i] += count;
-            html += `<td>${count}</td>`;
-          });
-          grandTotal += rowTotal;
-          html += `<td>${rowTotal}</td></tr>`;
-        });
-
-        html += '<tr><th>Total</th>';
-        totals.forEach(t => html += `<th>${t}</th>`);
-        html += `<th>${grandTotal}</th></tr></tbody></table>`;
-      });
-
-      elements.tableContainer.innerHTML = html;
-
-      const downloadBtn = document.createElement('button');
-      downloadBtn.className = 'download-btn';
-      downloadBtn.innerText = 'रिपोर्ट डाउनलोड करें';
-      downloadBtn.onclick = () => downloadSimReport(grouped, cafTypes);
-      elements.tableContainer.appendChild(downloadBtn);
-    };
-
-    const downloadSimReport = (grouped, cafTypes) => {
-      const data = [];
-      Object.keys(grouped).forEach(date => {
-        data.push({ 'Date': date });
-        Object.keys(grouped[date]).forEach(retailer => {
-          const row = { 'Retailer Name': retailer };
-          let total = 0;
-          cafTypes.forEach(type => {
-            row[type] = grouped[date][retailer][type] || 0;
-            total += row[type];
-          });
-          row['Total'] = total;
-          data.push(row);
-        });
-        data.push({ 'Retailer Name': 'Total', ...Object.fromEntries(cafTypes.map((t, i) => [t, Object.values(grouped[date]).reduce((sum, r) => sum + (r[t] || 0), 0)])), 'Total': Object.values(grouped[date]).reduce((sum, r) => sum + Object.values(r).reduce((s, c) => s + (c || 0), 0), 0) });
-      });
-
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'SIM Report');
-      XLSX.write(wb, 'SimSaleReport.xlsx');
-    };
-
-    // Number Sum
-    const calculateSingleDigitSum = () => {
-      const number = elements.mobileNumber.value.trim();
-      if (number.length !== 10 || !isValidMobileNumber(number)) {
-        state.result = 'कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें (6, 7, 8, या 9 से शुरू)।';
-      } else {
-        const sum = getSingleDigitSum(number);
-        state.result = `अंकों का एकल-अंकीय योग है: ${sum}`;
-      }
-      updateUI();
-    };
-
-    const processExcelSingleDigit = async () => {
-      const file = elements.excelFile.files[0];
-      if (!file) {
-        state.result = 'कृपया एक Excel फ़ाइल चुनें।';
-        updateUI();
-        return;
-      }
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-        state.result = 'कृपया केवल .xlsx या .xls फ़ाइल अपलोड करें।';
-        updateUI();
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        state.result = 'फ़ाइल का आकार 5MB से कम होना चाहिए।';
-        updateUI();
-        return;
-      }
-
-      state.isLoading = true;
-      updateUI();
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        let results = [];
-        let foundNumbers = false;
-
-        jsonData.forEach(row => {
-          const mobileNumber = String(row[0] || '').trim();
-          if (mobileNumber.length === 10 && isValidMobileNumber(mobileNumber)) {
-            foundNumbers = true;
-            const sum = getSingleDigitSum(mobileNumber);
-            results.push({ number: mobileNumber, sum });
-          }
-        });
-
-        state.result = foundNumbers
-          ? `मोबाइल नंबरों का एकल-अंकीय योग:\n${results.map(r => `${r.number}: ${r.sum}`).join('\n')}`
-          : 'Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।';
-
-        if (foundNumbers) {
-          const downloadBtn = document.createElement('button');
-          downloadBtn.className = 'download-btn';
-          downloadBtn.innerText = 'परिणाम डाउनलोड करें';
-          downloadBtn.onclick = () => downloadMobileResults(results);
-          elements.resultDiv.insertAdjacentElement('afterend', downloadBtn);
+    <meta charset="UTF-8">
+    <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #cea896 0%, #e8a6a6 100%);
+            padding: 20px;
+            margin: 0;
         }
-      } catch (error) {
-        state.result = `फ़ाइल पढ़ने में त्रुटि हुई: ${error.message}`;
-      } finally {
-        state.isLoading = false;
-        updateUI();
-      }
-    };
 
-    const downloadMobileResults = (results) => {
-      const ws = XLSX.utils.json_to_sheet(results.map(r => ({ 'मोबाइल नंबर': r.number, 'एकल-अंकीय योग': r.sum })));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Number Sums');
-      XLSX.write(wb, 'NumberSums.xlsx');
-    };
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+        }
 
-    // Reset form
-    const resetForm = () => {
-      elements.mobileNumber.value = '';
-      elements.excelFile.value = '';
-      elements.upload.value = '';
-      state.result = '';
-      elements.tableContainer.innerHTML = '';
-      updateUI();
-      const downloadBtn = document.querySelector('.download-btn');
-      if (downloadBtn) downloadBtn.remove();
-    };
+        h2,
+        h3 {
+            text-align: center;
+            color: #d9534f;
+        }
 
-    // Dark mode toggle
-    elements.darkModeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
-    });
+        input[type="file"],
+        input[type="number"] {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 60%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            text-align: center;
+        }
 
-    // Initialize dark mode
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark');
-    }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 30px;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+        }
 
-    // Initialize modal
-    elements.passwordModal.style.display = 'flex';
-    elements.mainContent.style.display = 'none';
-    elements.passwordInput.focus();
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-    // Event listeners
-    elements.submitPassword.addEventListener('click', checkPassword);
-    elements.passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkPassword();
-    });
-    elements.processSimBtn.addEventListener('click', processSimReport);
-    elements.calculateBtn.addEventListener('click', calculateSingleDigitSum);
-    elements.processExcelBtn.addEventListener('click', processExcelSingleDigit);
-    elements.resetBtn.addEventListener('click', resetForm);
-    elements.mobileNumber.addEventListener('input', () => {
-      if (elements.mobileNumber.value.length > 10) {
-        elements.mobileNumber.value = elements.mobileNumber.value.slice(0, 10);
-      }
-    });
-  </script>
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        tr.retailer-row {
+            background-color: #dff9fb;
+            font-weight: bold;
+        }
+
+        .date-heading {
+            background-color: #ffeaa7;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const correctPassword = "007272";
+            let input = prompt("Enter password to view the report:");
+            if (input !== correctPassword) {
+                document.body.innerHTML = '<h2 style="color:red;text-align:center">Access Denied</h2>';
+            }
+        });
+    </script>
+
+    <div class="container">
+        <h2>SIM Sale Report (Type-wise Count)</h2>
+        <input type="file" id="upload" accept=".xlsx, .xls" />
+        <div id="tableContainer"></div>
+
+        <hr>
+
+        <h2>ॐ गणेशाय नमः</h2>
+        <p style="text-align:center">मोबाइल नंबर के अंकों का एकल-अंकीय योग निकालें</p>
+        <input type="number" id="mobileNumber" placeholder="मोबाइल नंबर (10 अंक)" oninput="limitInput(this)">
+        <button onclick="calculateSingleDigitSum()">एकल-अंकीय योग निकालें</button>
+        <input type="file" id="excelFile" accept=".xlsx, .xls">
+        <button onclick="processExcelSingleDigit()">Excel से एकल-अंकीय योग निकालें</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let rawData = [];
+
+        document.getElementById('upload').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                rawData = XLSX.utils.sheet_to_json(sheet);
+                displayData();
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+
+        function displayData() {
+            const grouped = {};
+            const cafTypesSet = new Set();
+
+            rawData.forEach(row => {
+                const date = row['Date'] ? new Date(row['Date']).toLocaleDateString() : 'Unknown';
+                const retailer = row['Retailer Name'] || 'Unknown';
+                const type = (row['Type of CAF'] || '').toUpperCase();
+                cafTypesSet.add(type);
+
+                if (!grouped[date]) grouped[date] = {};
+                if (!grouped[date][retailer]) grouped[date][retailer] = {};
+
+                if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
+                grouped[date][retailer][type]++;
+            });
+
+            const cafTypes = Array.from(cafTypesSet);
+            const container = document.getElementById('tableContainer');
+            container.innerHTML = '';
+
+            Object.keys(grouped).forEach(date => {
+                let html = `<h3 class='date-heading'>${date}</h3>`;
+                html += '<table><thead><tr><th>Retailer Name</th>';
+                cafTypes.forEach(type => {
+                    html += `<th>${type}</th>`;
+                });
+                html += '<th>Total</th></tr></thead><tbody>';
+
+                const totals = new Array(cafTypes.length).fill(0);
+                let grandTotal = 0;
+
+                Object.keys(grouped[date]).forEach(retailer => {
+                    html += `<tr class='retailer-row'><td>${retailer}</td>`;
+                    let rowTotal = 0;
+                    cafTypes.forEach((type, i) => {
+                        const count = grouped[date][retailer][type] || 0;
+                        rowTotal += count;
+                        totals[i] += count;
+                        html += `<td>${count}</td>`;
+                    });
+                    grandTotal += rowTotal;
+                    html += `<td>${rowTotal}</td></tr>`;
+                });
+
+                html += '<tr><th>Total</th>';
+                totals.forEach(t => html += `<th>${t}</th>`);
+                html += `<th>${grandTotal}</th></tr>`;
+                html += '</tbody></table>';
+
+                container.innerHTML += html;
+            });
+        }
+
+        function limitInput(element) {
+            if (element.value.length > 10) {
+                element.value = element.value.slice(0, 10);
+            }
+        }
+
+        function getSingleDigitSum(numberString) {
+            let sum = 0;
+            for (let i = 0; i < numberString.length; i++) {
+                sum += parseInt(numberString[i]);
+            }
+            while (sum >= 10) {
+                let tempSum = 0;
+                let sumString = sum.toString();
+                for (let i = 0; i < sumString.length; i++) {
+                    tempSum += parseInt(sumString[i]);
+                }
+                sum = tempSum;
+            }
+            return sum;
+        }
+
+        function calculateSingleDigitSum() {
+            const numberInput = document.getElementById('mobileNumber').value;
+
+            if (numberInput.length !== 10) {
+                document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
+                return;
+            }
+
+            const singleDigitSum = getSingleDigitSum(numberInput);
+            document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
+        }
+
+        function processExcelSingleDigit() {
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) {
+                document.getElementById('result').innerText = "कृपया एक Excel फ़ाइल चुनें।";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                let results = "मोबाइल नंबरों का एकल-अंकीय योग:\n";
+                let foundNumbers = false;
+
+                jsonData.forEach(row => {
+                    row.forEach(cell => {
+                        const mobileNumber = String(cell).trim();
+                        if (/^\d{10}$/.test(mobileNumber)) {
+                            foundNumbers = true;
+                            const singleDigitSum = getSingleDigitSum(mobileNumber);
+                            results += `${mobileNumber}: ${singleDigitSum}\n`;
+                        }
+                    });
+                });
+
+                if (!foundNumbers) {
+                    document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
+                } else {
+                    document.getElementById('result').innerText = results;
+                }
+            };
+            reader.onerror = function (e) {
+                document.getElementById('result').innerText = "फ़ाइल पढ़ने में त्रुटि हुई: " + e.target.error;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
 </body>
+
 </html>
