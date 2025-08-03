@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -86,21 +87,12 @@
             text-align: center;
             margin-top: 20px;
             font-weight: bold;
+            white-space: pre-line;
         }
     </style>
 </head>
 
 <body>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const correctPassword = "007272";
-            let input = prompt("Enter password to view the report:");
-            if (input !== correctPassword) {
-                document.body.innerHTML = '<h2 style="color:red;text-align:center">Access Denied</h2>';
-            }
-        });
-    </script>
-
     <div class="container">
         <h2>SIM Sale Report (Type-wise Count)</h2>
         <input type="file" id="upload" accept=".xlsx, .xls" />
@@ -118,21 +110,77 @@
     </div>
 
     <script>
+        // PASSWORD OVERLAY
+        document.addEventListener("DOMContentLoaded", function () {
+            const correctPassword = "007272";
+            const pageContent = document.body.innerHTML;
+            document.body.innerHTML = "";
+
+            const overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
+            overlay.style.zIndex = "9999";
+            overlay.style.display = "flex";
+            overlay.style.justifyContent = "center";
+            overlay.style.alignItems = "center";
+            overlay.innerHTML = `
+                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+                    <h3 style="color:#d9534f;">Enter Password</h3>
+                    <input type="password" id="passInput" placeholder="••••••"
+                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
+                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
+                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">Access Denied</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            overlay.querySelector("#submitPass").addEventListener("click", () => {
+                const input = document.getElementById("passInput").value;
+                if (input === correctPassword) {
+                    document.body.innerHTML = pageContent;
+                    evalScripts();
+                } else {
+                    document.getElementById("errorMsg").style.display = "block";
+                }
+            });
+
+            function evalScripts() {
+                const scripts = document.querySelectorAll("script");
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement("script");
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                    }
+                    document.body.appendChild(newScript);
+                });
+            }
+        });
+    </script>
+
+    <script>
         let rawData = [];
 
-        document.getElementById('upload').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById('upload')?.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
 
-            reader.onload = function (event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                rawData = XLSX.utils.sheet_to_json(sheet);
-                displayData();
-            };
+                reader.onload = function (event) {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    rawData = XLSX.utils.sheet_to_json(sheet);
+                    displayData();
+                };
 
-            reader.readAsArrayBuffer(file);
+                reader.readAsArrayBuffer(file);
+            });
         });
 
         function displayData() {
@@ -182,17 +230,14 @@
 
                 html += '<tr><th>Total</th>';
                 totals.forEach(t => html += `<th>${t}</th>`);
-                html += `<th>${grandTotal}</th></tr>`;
-                html += '</tbody></table>';
+                html += `<th>${grandTotal}</th></tr></tbody></table>`;
 
                 container.innerHTML += html;
             });
         }
 
         function limitInput(element) {
-            if (element.value.length > 10) {
-                element.value = element.value.slice(0, 10);
-            }
+            element.value = element.value.replace(/\D/g, '').slice(0, 10);
         }
 
         function getSingleDigitSum(numberString) {
@@ -213,12 +258,10 @@
 
         function calculateSingleDigitSum() {
             const numberInput = document.getElementById('mobileNumber').value;
-
             if (numberInput.length !== 10) {
                 document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
                 return;
             }
-
             const singleDigitSum = getSingleDigitSum(numberInput);
             document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
         }
@@ -238,7 +281,7 @@
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                let results = "मोबाइल नंबरों का एकल-अंकीय योग:\n";
+                let html = "<table style='margin: 0 auto;'><tr><th>मोबाइल नंबर</th><th>एकल-अंकीय योग</th></tr>";
                 let foundNumbers = false;
 
                 jsonData.forEach(row => {
@@ -247,7 +290,7 @@
                         if (/^\d{10}$/.test(mobileNumber)) {
                             foundNumbers = true;
                             const singleDigitSum = getSingleDigitSum(mobileNumber);
-                            results += `${mobileNumber}: ${singleDigitSum}\n`;
+                            html += `<tr><td>${mobileNumber}</td><td>${singleDigitSum}</td></tr>`;
                         }
                     });
                 });
@@ -255,7 +298,8 @@
                 if (!foundNumbers) {
                     document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
                 } else {
-                    document.getElementById('result').innerText = results;
+                    html += "</table>";
+                    document.getElementById('result').innerHTML = html;
                 }
             };
             reader.onerror = function (e) {
