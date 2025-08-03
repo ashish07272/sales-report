@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIM Sale Report</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    input[type="file"] {
+      display: block;
+      margin: 20px auto;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    tr.retailer-row {
+      background-color: #dff9fb;
+      font-weight: bold;
+    }
+    .date-heading {
+      background-color: #ffeaa7;
+      font-weight: bold;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const correctPassword = "007272";
+      let input = prompt("Enter password to view the report:");
+      if (input !== correctPassword) {
+        document.body.innerHTML = '<h2 style="color:red;text-align:center">Access Denied</h2>';
+      }
+    });
+  </script>
+
+  <div class="container">
+    <h2>SIM Sale Report (Type-wise Count)</h2>
+    <input type="file" id="upload" accept=".xlsx, .xls" />
+    <div id="tableContainer"></div>
+  </div>
+
+  <script>
+    let rawData = [];
+
+    document.getElementById('upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rawData = XLSX.utils.sheet_to_json(sheet);
+        displayData();
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    function displayData() {
+      const grouped = {};
+      const cafTypesSet = new Set();
+
+      rawData.forEach(row => {
+        const date = row['Date'] ? new Date(row['Date']).toLocaleDateString() : 'Unknown';
+        const retailer = row['Retailer Name'] || 'Unknown';
+        const type = (row['Type of CAF'] || '').toUpperCase();
+        cafTypesSet.add(type);
+
+        if (!grouped[date]) grouped[date] = {};
+        if (!grouped[date][retailer]) grouped[date][retailer] = {};
+
+        if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
+        grouped[date][retailer][type]++;
+      });
+
+      const cafTypes = Array.from(cafTypesSet);
+      const container = document.getElementById('tableContainer');
+      container.innerHTML = '';
+
+      Object.keys(grouped).forEach(date => {
+        let html = `<h3 class='date-heading'>${date}</h3>`;
+        html += '<table><thead><tr><th>Retailer Name</th>';
+        cafTypes.forEach(type => {
+          html += `<th>${type}</th>`;
+        });
+        html += '<th>Total</th></tr></thead><tbody>';
+
+        const totals = new Array(cafTypes.length).fill(0);
+        let grandTotal = 0;
+
+        Object.keys(grouped[date]).forEach(retailer => {
+          html += `<tr class='retailer-row'><td>${retailer}</td>`;
+          let rowTotal = 0;
+          cafTypes.forEach((type, i) => {
+            const count = grouped[date][retailer][type] || 0;
+            rowTotal += count;
+            totals[i] += count;
+            html += `<td>${count}</td>`;
+          });
+          grandTotal += rowTotal;
+          html += `<td>${rowTotal}</td></tr>`;
+        });
+
+        html += '<tr><th>Total</th>';
+        totals.forEach(t => html += `<th>${t}</th>`);
+        html += `<th>${grandTotal}</th></tr>`;
+        html += '</tbody></table>';
+
+        container.innerHTML += html;
+      });
+    }
+  </script>
+</body>
+</html>
