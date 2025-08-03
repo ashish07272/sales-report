@@ -110,64 +110,15 @@
     </div>
 
     <script>
-        // PASSWORD OVERLAY
-        document.addEventListener("DOMContentLoaded", function () {
-            const correctPassword = "007272";
-            const pageContent = document.body.innerHTML;
-            document.body.innerHTML = "";
-
-            const overlay = document.createElement("div");
-            overlay.style.position = "fixed";
-            overlay.style.top = "0";
-            overlay.style.left = "0";
-            overlay.style.width = "100vw";
-            overlay.style.height = "100vh";
-            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
-            overlay.style.zIndex = "9999";
-            overlay.style.display = "flex";
-            overlay.style.justifyContent = "center";
-            overlay.style.alignItems = "center";
-            overlay.innerHTML = `
-                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-                    <h3 style="color:#d9534f;">Enter Password</h3>
-                    <input type="password" id="passInput" placeholder="••••••"
-                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
-                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
-                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">Access Denied</p>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            overlay.querySelector("#submitPass").addEventListener("click", () => {
-                const input = document.getElementById("passInput").value;
-                if (input === correctPassword) {
-                    document.body.innerHTML = pageContent;
-                    evalScripts();
-                } else {
-                    document.getElementById("errorMsg").style.display = "block";
-                }
-            });
-
-            function evalScripts() {
-                const scripts = document.querySelectorAll("script");
-                scripts.forEach(oldScript => {
-                    const newScript = document.createElement("script");
-                    if (oldScript.src) {
-                        newScript.src = oldScript.src;
-                    } else {
-                        newScript.textContent = oldScript.textContent;
-                    }
-                    document.body.appendChild(newScript);
-                });
-            }
-        });
-    </script>
-
-    <script>
+        // Raw data for SIM sale
         let rawData = [];
 
-        document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById('upload')?.addEventListener('change', function (e) {
+        // Add event listener to upload input
+        function initSimSaleUpload() {
+            const uploadInput = document.getElementById('upload');
+            if (!uploadInput) return;
+
+            uploadInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 const reader = new FileReader();
 
@@ -181,7 +132,7 @@
 
                 reader.readAsArrayBuffer(file);
             });
-        });
+        }
 
         function displayData() {
             const grouped = {};
@@ -307,6 +258,45 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
+        // Password Protection with overlay
+        document.addEventListener("DOMContentLoaded", function () {
+            const correctPassword = "007272";
+            const pageContent = document.body.innerHTML;
+            document.body.innerHTML = "";
+
+            const overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
+            overlay.style.zIndex = "9999";
+            overlay.style.display = "flex";
+            overlay.style.justifyContent = "center";
+            overlay.style.alignItems = "center";
+            overlay.innerHTML = `
+                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+                    <h3 style="color:#d9534f;">Enter Password</h3>
+                    <input type="password" id="passInput" placeholder="••••••"
+                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
+                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
+                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">Access Denied</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            overlay.querySelector("#submitPass").addEventListener("click", () => {
+                const input = document.getElementById("passInput").value;
+                if (input === correctPassword) {
+                    document.body.innerHTML = pageContent;
+                    initSimSaleUpload();
+                } else {
+                    document.getElementById("errorMsg").style.display = "block";
+                }
+            });
+        });
     </script>
 </body>
 
