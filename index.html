@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -87,12 +86,52 @@
             text-align: center;
             margin-top: 20px;
             font-weight: bold;
-            white-space: pre-line;
         }
     </style>
 </head>
 
 <body>
+    <!-- Password Overlay will load first -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const correctPassword = "007272";
+            const pageContent = document.body.innerHTML;
+            document.body.innerHTML = "";
+
+            const overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
+            overlay.style.zIndex = "9999";
+            overlay.style.display = "flex";
+            overlay.style.justifyContent = "center";
+            overlay.style.alignItems = "center";
+            overlay.innerHTML = `
+                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
+                    <h3 style="color:#d9534f;">Enter Password</h3>
+                    <input type="password" id="passInput" placeholder="••••••"
+                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
+                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
+                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">कौन अहे रे !!</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            overlay.querySelector("#submitPass").addEventListener("click", () => {
+                const input = document.getElementById("passInput").value;
+                if (input === correctPassword) {
+                    document.body.innerHTML = pageContent;
+                    initSimSaleUpload();
+                } else {
+                    document.getElementById("errorMsg").style.display = "block";
+                }
+            });
+        });
+    </script>
+
     <div class="container">
         <h2>SIM Sale Report (Type-wise Count)</h2>
         <input type="file" id="upload" accept=".xlsx, .xls" />
@@ -110,15 +149,10 @@
     </div>
 
     <script>
-        // Raw data for SIM sale
         let rawData = [];
 
-        // Add event listener to upload input
         function initSimSaleUpload() {
-            const uploadInput = document.getElementById('upload');
-            if (!uploadInput) return;
-
-            uploadInput.addEventListener('change', function (e) {
+            document.getElementById('upload').addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 const reader = new FileReader();
 
@@ -181,14 +215,17 @@
 
                 html += '<tr><th>Total</th>';
                 totals.forEach(t => html += `<th>${t}</th>`);
-                html += `<th>${grandTotal}</th></tr></tbody></table>`;
+                html += `<th>${grandTotal}</th></tr>`;
+                html += '</tbody></table>';
 
                 container.innerHTML += html;
             });
         }
 
         function limitInput(element) {
-            element.value = element.value.replace(/\D/g, '').slice(0, 10);
+            if (element.value.length > 10) {
+                element.value = element.value.slice(0, 10);
+            }
         }
 
         function getSingleDigitSum(numberString) {
@@ -209,10 +246,12 @@
 
         function calculateSingleDigitSum() {
             const numberInput = document.getElementById('mobileNumber').value;
+
             if (numberInput.length !== 10) {
                 document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
                 return;
             }
+
             const singleDigitSum = getSingleDigitSum(numberInput);
             document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
         }
@@ -232,7 +271,7 @@
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                let html = "<table style='margin: 0 auto;'><tr><th>मोबाइल नंबर</th><th>एकल-अंकीय योग</th></tr>";
+                let results = "मोबाइल नंबरों का एकल-अंकीय योग:\n";
                 let foundNumbers = false;
 
                 jsonData.forEach(row => {
@@ -241,7 +280,7 @@
                         if (/^\d{10}$/.test(mobileNumber)) {
                             foundNumbers = true;
                             const singleDigitSum = getSingleDigitSum(mobileNumber);
-                            html += `<tr><td>${mobileNumber}</td><td>${singleDigitSum}</td></tr>`;
+                            results += `${mobileNumber}: ${singleDigitSum}\n`;
                         }
                     });
                 });
@@ -249,8 +288,7 @@
                 if (!foundNumbers) {
                     document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
                 } else {
-                    html += "</table>";
-                    document.getElementById('result').innerHTML = html;
+                    document.getElementById('result').innerText = results;
                 }
             };
             reader.onerror = function (e) {
@@ -258,46 +296,8 @@
             };
             reader.readAsArrayBuffer(file);
         }
-
-        // Password Protection with overlay
-        document.addEventListener("DOMContentLoaded", function () {
-            const correctPassword = "007272";
-            const pageContent = document.body.innerHTML;
-            document.body.innerHTML = "";
-
-            const overlay = document.createElement("div");
-            overlay.style.position = "fixed";
-            overlay.style.top = "0";
-            overlay.style.left = "0";
-            overlay.style.width = "100vw";
-            overlay.style.height = "100vh";
-            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
-            overlay.style.zIndex = "9999";
-            overlay.style.display = "flex";
-            overlay.style.justifyContent = "center";
-            overlay.style.alignItems = "center";
-            overlay.innerHTML = `
-                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-                    <h3 style="color:#d9534f;">Enter Password</h3>
-                    <input type="password" id="passInput" placeholder="••••••"
-                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
-                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
-                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">Access Denied</p>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            overlay.querySelector("#submitPass").addEventListener("click", () => {
-                const input = document.getElementById("passInput").value;
-                if (input === correctPassword) {
-                    document.body.innerHTML = pageContent;
-                    initSimSaleUpload();
-                } else {
-                    document.getElementById("errorMsg").style.display = "block";
-                }
-            });
-        });
     </script>
+
 </body>
 
 </html>
