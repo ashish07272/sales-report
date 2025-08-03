@@ -1,303 +1,309 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #cea896 0%, #e8a6a6 100%);
-            padding: 20px;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-        }
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
-        h2,
-        h3 {
-            text-align: center;
-            color: #d9534f;
-        }
+    h2 {
+      text-align: center;
+      color: #d9534f;
+    }
 
-        input[type="file"],
-        input[type="number"] {
-            display: block;
-            margin: 10px auto;
-            padding: 10px;
-            width: 60%;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            text-align: center;
-        }
+    input[type="file"], input[type="number"] {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 80%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
 
-        button {
-            display: block;
-            margin: 10px auto;
-            padding: 10px 30px;
-            background-color: #d9534f;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 30px;
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
 
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
 
-        th {
-            background-color: #3498db;
-            color: white;
-        }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
 
-        tr.retailer-row {
-            background-color: #dff9fb;
-            font-weight: bold;
-        }
+    .info-box {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
 
-        .date-heading {
-            background-color: #ffeaa7;
-            font-weight: bold;
-            font-size: 16px;
-        }
+    #result {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
 
-        #result {
-            text-align: center;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
+    #password-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #password-box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+    }
+  </style>
 </head>
-
 <body>
-    <!-- Password Overlay will load first -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const correctPassword = "007272";
-            const pageContent = document.body.innerHTML;
-            document.body.innerHTML = "";
 
-            const overlay = document.createElement("div");
-            overlay.style.position = "fixed";
-            overlay.style.top = "0";
-            overlay.style.left = "0";
-            overlay.style.width = "100vw";
-            overlay.style.height = "100vh";
-            overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
-            overlay.style.zIndex = "9999";
-            overlay.style.display = "flex";
-            overlay.style.justifyContent = "center";
-            overlay.style.alignItems = "center";
-            overlay.innerHTML = `
-                <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-                    <h3 style="color:#d9534f;">Enter Password</h3>
-                    <input type="password" id="passInput" placeholder="••••••"
-                        style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
-                    <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
-                    <p id="errorMsg" style="color:red;margin-top:10px;display:none;">कौन अहे रे !!</p>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            overlay.querySelector("#submitPass").addEventListener("click", () => {
-                const input = document.getElementById("passInput").value;
-                if (input === correctPassword) {
-                    document.body.innerHTML = pageContent;
-                    initSimSaleUpload();
-                } else {
-                    document.getElementById("errorMsg").style.display = "block";
-                }
-            });
-        });
-    </script>
-
-    <div class="container">
-        <h2>SIM Sale Report (Type-wise Count)</h2>
-        <input type="file" id="upload" accept=".xlsx, .xls" />
-        <div id="tableContainer"></div>
-
-        <hr>
-
-        <h2>ॐ गणेशाय नमः</h2>
-        <p style="text-align:center">मोबाइल नंबर के अंकों का एकल-अंकीय योग निकालें</p>
-        <input type="number" id="mobileNumber" placeholder="मोबाइल नंबर (10 अंक)" oninput="limitInput(this)">
-        <button onclick="calculateSingleDigitSum()">एकल-अंकीय योग निकालें</button>
-        <input type="file" id="excelFile" accept=".xlsx, .xls">
-        <button onclick="processExcelSingleDigit()">Excel से एकल-अंकीय योग निकालें</button>
-        <div id="result"></div>
+  <div id="password-popup">
+    <div id="password-box">
+      <h3 style="color:#d9534f;">🔒 Enter Password</h3>
+      <input type="password" id="passInput" placeholder="••••••"
+             style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
+      <button id="submitPass"
+              style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
+      <p id="errorMsg" style="color:red;margin-top:10px;display:none;">❌ कौन अहे रे !!</p>
     </div>
+  </div>
 
-    <script>
-        let rawData = [];
+  <div class="container" id="main-content" style="display: none;">
+    <div class="info-box" id="live-info">Loading time and weather...</div>
 
-        function initSimSaleUpload() {
-            document.getElementById('upload').addEventListener('change', function (e) {
-                const file = e.target.files[0];
-                const reader = new FileReader();
+    <h2>SIM Sale Report 📊</h2>
+    <input type="file" id="upload" accept=".xlsx, .xls" />
+    <div id="tableContainer"></div>
 
-                reader.onload = function (event) {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    rawData = XLSX.utils.sheet_to_json(sheet);
-                    displayData();
-                };
+    <hr>
 
-                reader.readAsArrayBuffer(file);
+    <h2>ॐ गणेशाय नमः</h2>
+    <p style="text-align:center">मोबाइल नंबर के अंकों का एकल-अंकीय योग निकालें</p>
+    <input type="number" id="mobileNumber" placeholder="मोबाइल नंबर (10 अंक)" oninput="limitInput(this)">
+    <button onclick="calculateSingleDigitSum()">एकल-अंकीय योग निकालें</button>
+    <input type="file" id="excelFile" accept=".xlsx, .xls">
+    <button onclick="processExcelSingleDigit()">Excel से एकल-अंकीय योग निकालें</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Password Protection
+    document.getElementById("submitPass").addEventListener("click", function () {
+      const input = document.getElementById("passInput").value;
+      if (input === "007272") {
+        document.getElementById("password-popup").style.display = "none";
+        document.getElementById("main-content").style.display = "block";
+      } else {
+        document.getElementById("errorMsg").style.display = "block";
+      }
+    });
+
+    // SIM Sale Upload and Table Display
+    document.getElementById('upload').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawData = XLSX.utils.sheet_to_json(sheet);
+
+        const grouped = {};
+        const cafTypesSet = new Set();
+
+        rawData.forEach(row => {
+          const date = row['Date'] ? new Date(row['Date']).toLocaleDateString() : 'Unknown';
+          const retailer = row['Retailer Name'] || 'Unknown';
+          const type = (row['Type of CAF'] || '').toUpperCase();
+          cafTypesSet.add(type);
+
+          if (!grouped[date]) grouped[date] = {};
+          if (!grouped[date][retailer]) grouped[date][retailer] = {};
+          if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
+          grouped[date][retailer][type]++;
+        });
+
+        const cafTypes = Array.from(cafTypesSet);
+        const container = document.getElementById('tableContainer');
+        container.innerHTML = '';
+
+        Object.keys(grouped).forEach(date => {
+          let html = `<h3 style='background-color:#ffeaa7;padding:10px;'>${date}</h3>`;
+          html += '<table><thead><tr><th>Retailer Name</th>';
+          cafTypes.forEach(type => {
+            html += `<th>${type}</th>`;
+          });
+          html += '<th>Total</th></tr></thead><tbody>';
+
+          const totals = new Array(cafTypes.length).fill(0);
+          let grandTotal = 0;
+
+          Object.keys(grouped[date]).forEach(retailer => {
+            html += `<tr><td>${retailer}</td>`;
+            let rowTotal = 0;
+            cafTypes.forEach((type, i) => {
+              const count = grouped[date][retailer][type] || 0;
+              rowTotal += count;
+              totals[i] += count;
+              html += `<td>${count}</td>`;
             });
+            grandTotal += rowTotal;
+            html += `<td>${rowTotal}</td></tr>`;
+          });
+
+          html += '<tr><th>Total</th>';
+          totals.forEach(t => html += `<th>${t}</th>`);
+          html += `<th>${grandTotal}</th></tr></tbody></table>`;
+          container.innerHTML += html;
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // Mobile Number Sum
+    function limitInput(element) {
+      element.value = element.value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    function getSingleDigitSum(numberString) {
+      let sum = 0;
+      for (let i = 0; i < numberString.length; i++) {
+        sum += parseInt(numberString[i]);
+      }
+      while (sum >= 10) {
+        let tempSum = 0;
+        let sumString = sum.toString();
+        for (let i = 0; i < sumString.length; i++) {
+          tempSum += parseInt(sumString[i]);
         }
+        sum = tempSum;
+      }
+      return sum;
+    }
 
-        function displayData() {
-            const grouped = {};
-            const cafTypesSet = new Set();
+    function calculateSingleDigitSum() {
+      const numberInput = document.getElementById('mobileNumber').value;
+      if (numberInput.length !== 10) {
+        document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
+        return;
+      }
+      const singleDigitSum = getSingleDigitSum(numberInput);
+      document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
+    }
 
-            rawData.forEach(row => {
-                const date = row['Date'] ? new Date(row['Date']).toLocaleDateString() : 'Unknown';
-                const retailer = row['Retailer Name'] || 'Unknown';
-                const type = (row['Type of CAF'] || '').toUpperCase();
-                cafTypesSet.add(type);
+    function processExcelSingleDigit() {
+      const file = document.getElementById('excelFile').files[0];
+      if (!file) {
+        document.getElementById('result').innerText = "कृपया एक Excel फ़ाइल चुनें।";
+        return;
+      }
 
-                if (!grouped[date]) grouped[date] = {};
-                if (!grouped[date][retailer]) grouped[date][retailer] = {};
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
-                grouped[date][retailer][type]++;
-            });
+        let html = "<table style='margin: 0 auto;'><tr><th>मोबाइल नंबर</th><th>एकल-अंकीय योग</th></tr>";
+        let foundNumbers = false;
 
-            const cafTypes = Array.from(cafTypesSet);
-            const container = document.getElementById('tableContainer');
-            container.innerHTML = '';
-
-            Object.keys(grouped).forEach(date => {
-                let html = `<h3 class='date-heading'>${date}</h3>`;
-                html += '<table><thead><tr><th>Retailer Name</th>';
-                cafTypes.forEach(type => {
-                    html += `<th>${type}</th>`;
-                });
-                html += '<th>Total</th></tr></thead><tbody>';
-
-                const totals = new Array(cafTypes.length).fill(0);
-                let grandTotal = 0;
-
-                Object.keys(grouped[date]).forEach(retailer => {
-                    html += `<tr class='retailer-row'><td>${retailer}</td>`;
-                    let rowTotal = 0;
-                    cafTypes.forEach((type, i) => {
-                        const count = grouped[date][retailer][type] || 0;
-                        rowTotal += count;
-                        totals[i] += count;
-                        html += `<td>${count}</td>`;
-                    });
-                    grandTotal += rowTotal;
-                    html += `<td>${rowTotal}</td></tr>`;
-                });
-
-                html += '<tr><th>Total</th>';
-                totals.forEach(t => html += `<th>${t}</th>`);
-                html += `<th>${grandTotal}</th></tr>`;
-                html += '</tbody></table>';
-
-                container.innerHTML += html;
-            });
-        }
-
-        function limitInput(element) {
-            if (element.value.length > 10) {
-                element.value = element.value.slice(0, 10);
+        jsonData.forEach(row => {
+          row.forEach(cell => {
+            const mobileNumber = String(cell).trim();
+            if (/^\d{10}$/.test(mobileNumber)) {
+              foundNumbers = true;
+              const singleDigitSum = getSingleDigitSum(mobileNumber);
+              html += `<tr><td>${mobileNumber}</td><td>${singleDigitSum}</td></tr>`;
             }
+          });
+        });
+
+        if (!foundNumbers) {
+          document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
+        } else {
+          html += "</table>";
+          document.getElementById('result').innerHTML = html;
         }
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-        function getSingleDigitSum(numberString) {
-            let sum = 0;
-            for (let i = 0; i < numberString.length; i++) {
-                sum += parseInt(numberString[i]);
-            }
-            while (sum >= 10) {
-                let tempSum = 0;
-                let sumString = sum.toString();
-                for (let i = 0; i < sumString.length; i++) {
-                    tempSum += parseInt(sumString[i]);
-                }
-                sum = tempSum;
-            }
-            return sum;
-        }
+    // Weather and Time
+    const infoBox = document.getElementById("live-info");
 
-        function calculateSingleDigitSum() {
-            const numberInput = document.getElementById('mobileNumber').value;
+    function updateClock() {
+      const now = new Date();
+      return `🕒 ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+    }
 
-            if (numberInput.length !== 10) {
-                document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
-                return;
-            }
+    function fetchWeather() {
+      const apiKey = "b358267b7541c71aa767d0adf0963e0e";
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=Sultanpur,IN&units=metric&appid=${apiKey}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cod === 200) {
+            const temp = data.main.temp;
+            const desc = data.weather[0].description;
+            infoBox.innerHTML = `${updateClock()}<br>🌤️ Sultanpur Weather: ${temp}°C, ${desc}`;
+          } else {
+            infoBox.innerHTML = `${updateClock()}<br>Weather not available.`;
+          }
+        })
+        .catch(() => {
+          infoBox.innerHTML = `${updateClock()}<br>Weather not available.`;
+        });
+    }
 
-            const singleDigitSum = getSingleDigitSum(numberInput);
-            document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
-        }
-
-        function processExcelSingleDigit() {
-            const file = document.getElementById('excelFile').files[0];
-            if (!file) {
-                document.getElementById('result').innerText = "कृपया एक Excel फ़ाइल चुनें।";
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                let results = "मोबाइल नंबरों का एकल-अंकीय योग:\n";
-                let foundNumbers = false;
-
-                jsonData.forEach(row => {
-                    row.forEach(cell => {
-                        const mobileNumber = String(cell).trim();
-                        if (/^\d{10}$/.test(mobileNumber)) {
-                            foundNumbers = true;
-                            const singleDigitSum = getSingleDigitSum(mobileNumber);
-                            results += `${mobileNumber}: ${singleDigitSum}\n`;
-                        }
-                    });
-                });
-
-                if (!foundNumbers) {
-                    document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
-                } else {
-                    document.getElementById('result').innerText = results;
-                }
-            };
-            reader.onerror = function (e) {
-                document.getElementById('result').innerText = "फ़ाइल पढ़ने में त्रुटि हुई: " + e.target.error;
-            };
-            reader.readAsArrayBuffer(file);
-        }
-    </script>
-
+    fetchWeather();
+    setInterval(fetchWeather, 60000);
+  </script>
 </body>
-
 </html>
