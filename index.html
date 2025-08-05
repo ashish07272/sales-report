@@ -1,289 +1,522 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>SIM Sale Report + गणेश जी मोबाइल योग</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #cea896 0%, #e8a6a6 100%);
-      padding: 20px;
-      margin: 0;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 20px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-    }
-    h2, h3 {
-      text-align: center;
-      color: #d9534f;
-    }
-    input[type="file"], input[type="number"] {
-      display: block;
-      margin: 10px auto;
-      padding: 10px;
-      width: 60%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      text-align: center;
-    }
-    button {
-      display: block;
-      margin: 10px auto;
-      padding: 10px 30px;
-      background-color: #d9534f;
-      color: white;
-      border: none;
-      border-radius: 50px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #3498db;
-      color: white;
-    }
-    tr.retailer-row {
-      background-color: #dff9fb;
-      font-weight: bold;
-    }
-    .date-heading {
-      background-color: #ffeaa7;
-      font-weight: bold;
-      font-size: 16px;
-    }
-    #result {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-      white-space: pre-line;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All-in-One Business & Astro Tool</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx.js) for reading/writing Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .file-input-label {
+            border: 2px dashed #4b5563; /* border-gray-600 */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .file-input-label.dragover {
+            border-color: #ef4444; /* border-red-500 */
+            background-color: #1f2937; /* bg-gray-800 */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #374151; /* border-gray-700 */
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #1f2937; /* bg-gray-800 */
+            color: #d1d5db; /* text-gray-300 */
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .result-table-container {
+            max-height: 500px;
+            overflow: auto;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+        }
+        .date-heading {
+            background-color: #ef4444; color: white; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 1.1rem; text-align: center;
+        }
+        input[type="number"], input[type="password"], select {
+            background-color: #374151; border: 1px solid #4b5563; color: #d1d5db; border-radius: 0.375rem; padding: 0.5rem; width: 100%;
+        }
+        select:disabled { background-color: #1f2937; cursor: not-allowed; }
+        .main-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; background-color: #ef4444; color: white; box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+            transition: all 0.2s ease-in-out; cursor: pointer;
+        }
+        .main-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.5); }
+        .main-btn:disabled { background: #4b5563; cursor: not-allowed; box-shadow: none; }
+        .tab-button {
+            padding: 10px 20px; font-weight: 600; color: #9ca3af; border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active { color: #ef4444; border-bottom-color: #ef4444; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .gemini-btn {
+            background: linear-gradient(to right, #ef4444, #f97316);
+        }
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #FFF;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h2>SIM Sale Report (Type-wise Count)</h2>
-    <input type="file" id="upload" accept=".xlsx, .xls" />
-    <div id="tableContainer"></div>
+<body class="text-gray-200">
+    <!-- This container will be populated by JS after password -->
+    <div id="main-content" class="hidden">
+        <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+            <header class="text-center mb-10">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white">
+                    All-in-One <span class="text-red-500">Business</span> Suite
+                </h1>
+                <p class="text-gray-400 mt-3 text-lg">VLOOKUP, SIM Report, and Mobile Sum Tool, powered by Gemini AI.</p>
+            </header>
 
-    <hr>
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-700 mb-8">
+                <nav class="-mb-px flex justify-center space-x-4 md:space-x-8" aria-label="Tabs">
+                    <button class="tab-button active" onclick="switchTab('vlookup')">VLOOKUP Tool</button>
+                    <button class="tab-button" onclick="switchTab('sim-report')">SIM Report</button>
+                    <button class="tab-button" onclick="switchTab('mobile-yog')">Mobile Sum Tool</button>
+                </nav>
+            </div>
 
-    <h2>ॐ गणेशाय नमः</h2>
-    <p style="text-align:center">मोबाइल नंबर के अंकों का एकल-अंकीय योग निकालें</p>
-    <input type="number" id="mobileNumber" placeholder="मोबाइल नंबर (10 अंक)" oninput="limitInput(this)">
-    <button onclick="calculateSingleDigitSum()">एकल-अंकीय योग निकालें</button>
-    <input type="file" id="excelFile" accept=".xlsx, .xls">
-    <button onclick="processExcelSingleDigit()">Excel से एकल-अंकीय योग निकालें</button>
-    <div id="result"></div>
-  </div>
+            <!-- Tab Panels -->
+            <div>
+                <!-- VLOOKUP Panel -->
+                <div id="vlookup-panel" class="tab-panel active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+                            <h3 class="text-xl font-bold mb-4 text-red-400">1. Main File (Lookup Table)</h3>
+                            <label for="vlookupFile1" class="file-input-label flex flex-col items-center justify-center p-6 rounded-lg cursor-pointer"><span id="vlookupFile1-name">Choose File</span></label>
+                            <input type="file" id="vlookupFile1" class="hidden" accept=".xlsx, .xls">
+                            <div class="space-y-4 mt-4">
+                                <select id="vlookupSheet1" disabled><option>Select Sheet</option></select>
+                                <select id="vlookupKey1" disabled><option>Select Lookup Key</option></select>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+                            <h3 class="text-xl font-bold mb-4 text-red-400">2. Data File (Data Table)</h3>
+                            <label for="vlookupFile2" class="file-input-label flex flex-col items-center justify-center p-6 rounded-lg cursor-pointer"><span id="vlookupFile2-name">Choose File</span></label>
+                            <input type="file" id="vlookupFile2" class="hidden" accept=".xlsx, .xls">
+                            <div class="space-y-4 mt-4">
+                                <select id="vlookupSheet2" disabled><option>Select Sheet</option></select>
+                                <select id="vlookupKey2" disabled><option>Select Matching Key</option></select>
+                                <select id="vlookupValue2" disabled><option>Select Return Column</option></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center my-8">
+                        <button id="processVlookupBtn" class="main-btn" disabled>Run VLOOKUP</button>
+                    </div>
+                    <div id="vlookupResultSection" class="hidden bg-gray-800/50 p-6 rounded-lg border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-2xl font-bold">Result</h3>
+                            <button id="downloadVlookupBtn" class="main-btn">Download as Excel</button>
+                        </div>
+                        <div id="vlookupResultContainer" class="result-table-container"></div>
+                    </div>
+                </div>
 
-  <script>
-    // Raw data for SIM sale
-    let rawData = [];
+                <!-- SIM Report Panel -->
+                <div id="sim-report-panel" class="tab-panel">
+                    <div class="bg-gray-800/50 p-6 rounded-lg border border-gray-700 max-w-4xl mx-auto">
+                        <h2 class="text-2xl font-bold mb-4 text-center text-red-400">SIM Sale Report</h2>
+                        <label for="simReportFile" class="file-input-label flex items-center justify-center w-full p-6 rounded-lg cursor-pointer">
+                            <span id="sim-file-name" class="font-semibold text-gray-400">Choose Report Excel File</span>
+                        </label>
+                        <input type="file" id="simReportFile" class="hidden" accept=".xlsx, .xls">
+                        <div id="simReportActions" class="text-center my-4 hidden">
+                            <button id="analyzeReportBtn" class="main-btn gemini-btn">✨ Analyze Report & Get Suggestions</button>
+                        </div>
+                        <div id="simReportAnalysisResult" class="mt-4 p-4 bg-gray-900/50 rounded-lg whitespace-pre-wrap"></div>
+                        <div id="simReportContainer" class="mt-6"></div>
+                    </div>
+                </div>
 
-    function initSimSaleUpload() {
-      const uploadInput = document.getElementById('upload');
-      if (!uploadInput) return;
+                <!-- Mobile Yog Panel -->
+                <div id="mobile-yog-panel" class="tab-panel">
+                    <div class="bg-gray-800/50 p-6 rounded-lg border border-gray-700 max-w-md mx-auto">
+                        <h2 class="text-2xl font-bold mb-4 text-center text-red-400">Mobile Number Sum Tool</h2>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Sum of a single number:</label>
+                                <input type="number" id="mobileNumberInput" placeholder="Enter 10-digit mobile number" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)">
+                                <button onclick="calculateSingleDigitSum()" class="main-btn w-full mt-3">Calculate Sum</button>
+                            </div>
+                            <div class="relative"><div class="absolute inset-0 flex items-center"><span class="w-full border-t border-gray-600"></span></div><div class="relative flex justify-center text-sm"><span class="bg-gray-800/50 px-2 text-gray-400">OR</span></div></div>
+                            <div>
+                                <label for="mobileYogFile" class="file-input-label flex items-center justify-center w-full p-6 rounded-lg cursor-pointer">
+                                    <span id="yog-file-name" class="font-semibold text-gray-400">Choose Excel file of numbers</span>
+                                </label>
+                                <input type="file" id="mobileYogFile" class="hidden" accept=".xlsx, .xls">
+                                <button onclick="processExcelSingleDigit()" class="main-btn w-full mt-3">Calculate Sum from Excel</button>
+                            </div>
+                            <div id="mobileYogResult" class="bg-gray-900/50 p-4 rounded-lg min-h-[50px] text-center font-bold"></div>
+                             <div id="numerologyActions" class="text-center my-4 hidden">
+                                <button id="getNumerologyBtn" class="main-btn gemini-btn">✨ Get Numerology Insights</button>
+                            </div>
+                            <div id="numerologyResult" class="mt-4 p-4 bg-gray-900/50 rounded-lg whitespace-pre-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <footer class="text-center text-gray-500 mt-12 py-4">
+                Developed with Love ❤️ by Ashish Mishra
+            </footer>
+        </div>
+    </div>
 
-      uploadInput.addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
+    <script>
+    // --- PASSWORD PROTECTION & INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", function () {
+        const correctPassword = "007272";
+        const mainContentHTML = document.getElementById('main-content').innerHTML;
+        document.getElementById('main-content').remove();
 
-        reader.onload = function (event) {
-          const data = new Uint8Array(event.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          rawData = XLSX.utils.sheet_to_json(sheet);
-          displayData();
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:rgba(17,24,39,0.95); z-index:9999; display:flex; justify-content:center; align-items:center;";
+        overlay.innerHTML = `<div style="background-color:#1f2937; padding:30px; border-radius:10px; text-align:center; max-width:320px; width:90%; border: 1px solid #374151;"><h3 style="color:#ef4444; font-size:1.5rem; font-weight:bold; margin-bottom:1rem;">Enter Password</h3><input type="password" id="passInput" placeholder="••••••" style="width:100%; margin:10px 0;"/><button id="submitPass" class="main-btn w-full mt-3">Submit</button><p id="errorMsg" style="color:#f87171; margin-top:10px; display:none;"></p></div>`;
+        document.body.appendChild(overlay);
+
+        const passInput = document.getElementById("passInput");
+        const submitBtn = overlay.querySelector("#submitPass");
+
+        const checkPassword = () => {
+            if (passInput.value === correctPassword) {
+                document.body.innerHTML = mainContentHTML;
+                initializeApp();
+            } else {
+                const msg = document.getElementById("errorMsg");
+                msg.innerText = "❌ Wrong Password !!";
+                msg.style.display = "block";
+            }
+        };
+        submitBtn.addEventListener("click", checkPassword);
+        passInput.addEventListener("keyup", (event) => { if (event.key === "Enter") checkPassword(); });
+        passInput.focus();
+    });
+
+    function initializeApp() {
+        initVlookupTool();
+        initSimSaleReport();
+        initMobileYogTool();
+    }
+    
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+        document.getElementById(`${tabName}-panel`).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // --- GEMINI API CALL ---
+    async function callGeminiAPI(prompt, buttonElement) {
+        const originalButtonContent = buttonElement.innerHTML;
+        buttonElement.innerHTML = '<span class="loader"></span>';
+        buttonElement.disabled = true;
+
+        const apiKey = ""; // API key will be injected by the environment
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        
+        const payload = {
+            contents: [{
+                parts: [{ text: prompt }]
+            }]
         };
 
-        reader.readAsArrayBuffer(file);
-      });
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                return "Sorry, I couldn't get a response. Please try again.";
+            }
+        } catch (error) {
+            console.error("Gemini API call failed:", error);
+            return "An error occurred while contacting the AI. Please check the console for details.";
+        } finally {
+            buttonElement.innerHTML = originalButtonContent;
+            buttonElement.disabled = false;
+        }
     }
 
-    function displayData() {
-      const grouped = {};
-      const cafTypesSet = new Set();
 
-      rawData.forEach(row => {
-        const date = row['Date'] ? new Date(row['Date']).toLocaleDateString() : 'Unknown';
-        const retailer = row['Retailer Name'] || 'Unknown';
-        const type = (row['Type of CAF'] || '').toUpperCase();
-        cafTypesSet.add(type);
+    // --- VLOOKUP TOOL LOGIC ---
+    let vlookupWb1, vlookupWb2, vlookupResultData = [];
+    function initVlookupTool() {
+        const fileInput1 = document.getElementById('vlookupFile1');
+        const fileInput2 = document.getElementById('vlookupFile2');
+        const sheetSelect1 = document.getElementById('vlookupSheet1');
+        const sheetSelect2 = document.getElementById('vlookupSheet2');
+        const keySelect1 = document.getElementById('vlookupKey1');
+        const keySelect2 = document.getElementById('vlookupKey2');
+        const valueSelect2 = document.getElementById('vlookupValue2');
+        const processBtn = document.getElementById('processVlookupBtn');
+        const downloadBtn = document.getElementById('downloadVlookupBtn');
 
-        if (!grouped[date]) grouped[date] = {};
-        if (!grouped[date][retailer]) grouped[date][retailer] = {};
+        const handleFile = (file, fileNumber) => {
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                if (fileNumber === 1) {
+                    vlookupWb1 = workbook;
+                    populateSelect(sheetSelect1, workbook.SheetNames, 'Select Sheet');
+                    document.getElementById('vlookupFile1-name').textContent = file.name;
+                } else {
+                    vlookupWb2 = workbook;
+                    populateSelect(sheetSelect2, workbook.SheetNames, 'Select Sheet');
+                    document.getElementById('vlookupFile2-name').textContent = file.name;
+                }
+                checkVlookupSelections();
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        
+        const populateSelect = (selectElement, options, placeholder) => {
+            selectElement.innerHTML = `<option value="">-- ${placeholder || 'Select'} --</option>`;
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt; option.textContent = opt;
+                selectElement.appendChild(option);
+            });
+            selectElement.disabled = false;
+        };
 
-        if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
-        grouped[date][retailer][type]++;
-      });
+        const populateColumnSelects = (workbook, sheetName, ...selects) => {
+            const worksheet = workbook.Sheets[sheetName];
+            const headers = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
+            selects.forEach(sel => populateSelect(sel, headers, 'Select Column'));
+        };
 
-      const cafTypes = Array.from(cafTypesSet);
-      const container = document.getElementById('tableContainer');
-      container.innerHTML = '';
+        const checkVlookupSelections = () => {
+            processBtn.disabled = !(fileInput1.files.length > 0 && fileInput2.files.length > 0 && sheetSelect1.value && sheetSelect2.value && keySelect1.value && keySelect2.value && valueSelect2.value);
+        };
 
-      Object.keys(grouped).forEach(date => {
-        let html = `<h3 class='date-heading'>${date}</h3>`;
-        html += '<table><thead><tr><th>Retailer Name</th>';
-        cafTypes.forEach(type => {
-          html += `<th>${type}</th>`;
+        fileInput1.addEventListener('change', (e) => handleFile(e.target.files[0], 1));
+        fileInput2.addEventListener('change', (e) => handleFile(e.target.files[0], 2));
+        sheetSelect1.addEventListener('change', () => { populateColumnSelects(vlookupWb1, sheetSelect1.value, keySelect1); checkVlookupSelections(); });
+        sheetSelect2.addEventListener('change', () => { populateColumnSelects(vlookupWb2, sheetSelect2.value, keySelect2, valueSelect2); checkVlookupSelections(); });
+        [keySelect1, keySelect2, valueSelect2].forEach(el => el.addEventListener('change', checkVlookupSelections));
+        
+        processBtn.addEventListener('click', () => {
+            const data1 = XLSX.utils.sheet_to_json(vlookupWb1.Sheets[sheetSelect1.value]);
+            const data2 = XLSX.utils.sheet_to_json(vlookupWb2.Sheets[sheetSelect2.value]);
+            const lookupMap = new Map();
+            data2.forEach(row => {
+                if (row[keySelect2.value] !== undefined && !lookupMap.has(row[keySelect2.value])) {
+                    lookupMap.set(row[keySelect2.value], row[valueSelect2.value]);
+                }
+            });
+            vlookupResultData = data1.map(row => ({...row, [valueSelect2.value]: lookupMap.get(row[keySelect1.value]) || 'N/A'}));
+            displayVlookupResult(vlookupResultData);
         });
-        html += '<th>Total</th></tr></thead><tbody>';
 
-        const totals = new Array(cafTypes.length).fill(0);
-        let grandTotal = 0;
-
-        Object.keys(grouped[date]).forEach(retailer => {
-          html += `<tr class='retailer-row'><td>${retailer}</td>`;
-          let rowTotal = 0;
-          cafTypes.forEach((type, i) => {
-            const count = grouped[date][retailer][type] || 0;
-            rowTotal += count;
-            totals[i] += count;
-            html += `<td>${count}</td>`;
-          });
-          grandTotal += rowTotal;
-          html += `<td>${rowTotal}</td></tr>`;
+        downloadBtn.addEventListener('click', () => {
+            if(vlookupResultData.length === 0) return;
+            const ws = XLSX.utils.json_to_sheet(vlookupResultData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Merged_Data');
+            XLSX.writeFile(wb, 'VLOOKUP_Result.xlsx');
         });
-
-        html += '<tr><th>Total</th>';
-        totals.forEach(t => html += `<th>${t}</th>`);
-        html += `<th>${grandTotal}</th></tr></tbody></table>`;
-
-        container.innerHTML += html;
-      });
+    }
+    
+    function displayVlookupResult(data) {
+        const container = document.getElementById('vlookupResultContainer');
+        const section = document.getElementById('vlookupResultSection');
+        if(!data || data.length === 0) { container.innerHTML = '<p>No results found.</p>'; return; }
+        const headers = Object.keys(data[0]);
+        let tableHTML = '<table><thead><tr>';
+        headers.forEach(h => tableHTML += `<th>${h}</th>`);
+        tableHTML += '</tr></thead><tbody>';
+        data.forEach(row => {
+            tableHTML += '<tr>';
+            headers.forEach(h => tableHTML += `<td>${row[h] ?? ''}</td>`);
+            tableHTML += '</tr>';
+        });
+        tableHTML += '</tbody></table>';
+        container.innerHTML = tableHTML;
+        section.classList.remove('hidden');
     }
 
-    function limitInput(element) {
-      element.value = element.value.replace(/\D/g, '').slice(0, 10);
+    // --- SIM SALE REPORT LOGIC ---
+    let simReportGroupedData = {};
+    function initSimSaleReport() {
+        const uploadInput = document.getElementById('simReportFile');
+        uploadInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('sim-file-name').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rawData = XLSX.utils.sheet_to_json(sheet);
+                displaySimReport(rawData);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        document.getElementById('analyzeReportBtn').addEventListener('click', async () => {
+            const analysisResultDiv = document.getElementById('simReportAnalysisResult');
+            analysisResultDiv.innerHTML = '<div class="flex justify-center"><span class="loader"></span></div>';
+            
+            const simplifiedData = JSON.stringify(simReportGroupedData, null, 2);
+            const prompt = `Analyze the following daily SIM sales report data. Identify key trends, top-performing retailers, and underperforming ones. Provide actionable suggestions to boost sales. Present the output in clear sections: Key Trends, Top Performers, Areas for Improvement, and Actionable Suggestions. Here is the data:\n\n${simplifiedData}`;
+            
+            const analysis = await callGeminiAPI(prompt, document.getElementById('analyzeReportBtn'));
+            analysisResultDiv.innerText = analysis;
+        });
+    }
+
+    function displaySimReport(rawData) {
+        const grouped = {}; const cafTypesSet = new Set();
+        rawData.forEach(row => {
+            let date;
+            if (typeof row['Date'] === 'number') date = new Date(Math.round((row['Date'] - 25569) * 86400 * 1000)).toLocaleDateString('en-IN');
+            else date = row['Date'] ? new Date(row['Date']).toLocaleDateString('en-IN') : 'Unknown';
+            const retailer = row['Retailer Name'] || 'Unknown';
+            const type = (row['Type of CAF'] || 'N/A').toUpperCase();
+            if (type !== 'N/A') cafTypesSet.add(type);
+            if (!grouped[date]) grouped[date] = {};
+            if (!grouped[date][retailer]) grouped[date][retailer] = {};
+            if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
+            grouped[date][retailer][type]++;
+        });
+        simReportGroupedData = grouped; // Store for analysis
+        const cafTypes = Array.from(cafTypesSet).sort();
+        const container = document.getElementById('simReportContainer');
+        container.innerHTML = '';
+        Object.keys(grouped).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
+            let html = `<h3 class='date-heading'>${date}</h3><table><thead><tr><th>Retailer Name</th>`;
+            cafTypes.forEach(type => { html += `<th>${type}</th>`; });
+            html += '<th>Total</th></tr></thead><tbody>';
+            const totals = new Array(cafTypes.length).fill(0); let grandTotal = 0;
+            Object.keys(grouped[date]).sort().forEach(retailer => {
+                html += `<tr><td>${retailer}</td>`; let rowTotal = 0;
+                cafTypes.forEach((type, i) => {
+                    const count = grouped[date][retailer][type] || 0;
+                    rowTotal += count; totals[i] += count;
+                    html += `<td>${count}</td>`;
+                });
+                grandTotal += rowTotal; html += `<td>${rowTotal}</td></tr>`;
+            });
+            html += '<tr><th>Total</th>'; totals.forEach(t => html += `<th>${t}</th>`);
+            html += `<th>${grandTotal}</th></tr></tbody></table>`;
+            container.innerHTML += html;
+        });
+        document.getElementById('simReportActions').classList.remove('hidden');
+    }
+
+    // --- MOBILE YOG LOGIC ---
+    let currentSum = null;
+    function initMobileYogTool() {
+        const fileInput = document.getElementById('mobileYogFile');
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) document.getElementById('yog-file-name').textContent = file.name;
+        });
+
+        document.getElementById('getNumerologyBtn').addEventListener('click', async () => {
+            if (currentSum === null) return;
+            const numerologyResultDiv = document.getElementById('numerologyResult');
+            numerologyResultDiv.innerHTML = '<div class="flex justify-center"><span class="loader"></span></div>';
+            const prompt = `Provide a brief, positive, and engaging numerology reading for the number ${currentSum}. Explain its core meaning, positive traits, potential challenges, lucky colors, and lucky days. Keep it concise and easy to read.`;
+            const insights = await callGeminiAPI(prompt, document.getElementById('getNumerologyBtn'));
+            numerologyResultDiv.innerText = insights;
+        });
     }
 
     function getSingleDigitSum(numberString) {
-      let sum = 0;
-      for (let i = 0; i < numberString.length; i++) {
-        sum += parseInt(numberString[i]);
-      }
-      while (sum >= 10) {
-        let tempSum = 0;
-        let sumString = sum.toString();
-        for (let i = 0; i < sumString.length; i++) {
-          tempSum += parseInt(sumString[i]);
-        }
-        sum = tempSum;
-      }
-      return sum;
+        let sum = numberString.split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+        while (sum >= 10) sum = sum.toString().split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+        return sum;
     }
 
     function calculateSingleDigitSum() {
-      const numberInput = document.getElementById('mobileNumber').value;
-      if (numberInput.length !== 10) {
-        document.getElementById('result').innerText = "कृपया एक मान्य 10-अंकों का मोबाइल नंबर दर्ज करें।";
-        return;
-      }
-      const singleDigitSum = getSingleDigitSum(numberInput);
-      document.getElementById('result').innerText = `अंकों का एकल-अंकीय योग है: ${singleDigitSum}`;
+        const numberInput = document.getElementById('mobileNumberInput').value;
+        const resultDiv = document.getElementById('mobileYogResult');
+        const actionsDiv = document.getElementById('numerologyActions');
+        document.getElementById('numerologyResult').innerHTML = '';
+
+        if (numberInput.length !== 10) { 
+            resultDiv.innerText = "Please enter a 10-digit number."; 
+            actionsDiv.classList.add('hidden');
+            return; 
+        }
+        const sum = getSingleDigitSum(numberInput);
+        currentSum = sum;
+        resultDiv.innerText = `The single-digit sum is: ${sum}`;
+        actionsDiv.classList.remove('hidden');
     }
 
     function processExcelSingleDigit() {
-      const file = document.getElementById('excelFile').files[0];
-      if (!file) {
-        document.getElementById('result').innerText = "कृपया एक Excel फ़ाइल चुनें।";
-        return;
-      }
+        const file = document.getElementById('mobileYogFile').files[0];
+        const resultDiv = document.getElementById('mobileYogResult');
+        document.getElementById('numerologyActions').classList.add('hidden');
+        document.getElementById('numerologyResult').innerHTML = '';
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        let html = "<table style='margin: 0 auto;'><tr><th>मोबाइल नंबर</th><th>एकल-अंकीय योग</th></tr>";
-        let foundNumbers = false;
-
-        jsonData.forEach(row => {
-          row.forEach(cell => {
-            const mobileNumber = String(cell).trim();
-            if (/^\d{10}$/.test(mobileNumber)) {
-              foundNumbers = true;
-              const singleDigitSum = getSingleDigitSum(mobileNumber);
-              html += `<tr><td>${mobileNumber}</td><td>${singleDigitSum}</td></tr>`;
-            }
-          });
-        });
-
-        if (!foundNumbers) {
-          document.getElementById('result').innerText = "Excel फ़ाइल में कोई मान्य 10-अंकों का मोबाइल नंबर नहीं मिला।";
-        } else {
-          html += "</table>";
-          document.getElementById('result').innerHTML = html;
-        }
-      };
-      reader.onerror = function (e) {
-        document.getElementById('result').innerText = "फ़ाइल पढ़ने में त्रुटि हुई: " + e.target.error;
-      };
-      reader.readAsArrayBuffer(file);
+        if (!file) { resultDiv.innerText = "Please select an Excel file."; return; }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            let html = "<table><thead><tr><th>Mobile Number</th><th>Sum</th></tr></thead><tbody>";
+            let foundNumbers = false;
+            jsonData.forEach(row => {
+                row.forEach(cell => {
+                    const mobileNumber = String(cell).trim().replace(/\D/g, '');
+                    if (mobileNumber.length === 10) {
+                        foundNumbers = true;
+                        html += `<tr><td>${mobileNumber}</td><td>${getSingleDigitSum(mobileNumber)}</td></tr>`;
+                    }
+                });
+            });
+            if (!foundNumbers) resultDiv.innerText = "No valid 10-digit numbers found in the Excel file.";
+            else resultDiv.innerHTML = html + "</tbody></table>";
+        };
+        reader.readAsArrayBuffer(file);
     }
-
-    // Password Protection with overlay
-    document.addEventListener("DOMContentLoaded", function () {
-      const correctPassword = "007272";
-      const pageContent = document.body.innerHTML;
-      document.body.innerHTML = "";
-
-      const overlay = document.createElement("div");
-      overlay.style.position = "fixed";
-      overlay.style.top = "0";
-      overlay.style.left = "0";
-      overlay.style.width = "100vw";
-      overlay.style.height = "100vh";
-      overlay.style.backgroundColor = "rgba(0,0,0,0.9)";
-      overlay.style.zIndex = "9999";
-      overlay.style.display = "flex";
-      overlay.style.justifyContent = "center";
-      overlay.style.alignItems = "center";
-      overlay.innerHTML = `
-        <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;width:90%;">
-          <h3 style="color:#d9534f;">Enter Password</h3>
-          <input type="password" id="passInput" placeholder="••••••"
-              style="padding:10px;width:100%;margin:10px 0;font-size:16px;border:1px solid #ccc;border-radius:5px;text-align:center;" />
-          <button id="submitPass" style="padding:10px 20px;background:#d9534f;color:white;border:none;border-radius:5px;cursor:pointer;">Submit</button>
-          <p id="errorMsg" style="color:red;margin-top:10px;display:none;"></p>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      overlay.querySelector("#submitPass").addEventListener("click", () => {
-        const input = document.getElementById("passInput").value;
-        if (input === correctPassword) {
-          document.body.innerHTML = pageContent;
-          initSimSaleUpload();
-        } else {
-          const msg = document.getElementById("errorMsg");
-          msg.innerText = "❌ कौन अहे रे !!";
-          msg.style.display = "block";
-        }
-      });
-    });
-  </script>
+    </script>
 </body>
 </html>
-
