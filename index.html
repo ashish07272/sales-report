@@ -20,6 +20,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #111827; /* bg-gray-900 */
+            transition: background-color 0.3s ease;
         }
         .file-input-label {
             border: 2px dashed #4b5563; /* border-gray-600 */
@@ -56,9 +57,10 @@
         .date-heading {
             background-color: var(--primary-color); color: white; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 1.1rem; text-align: center;
         }
-        input[type="number"], input[type="password"], select {
+        input[type="number"], input[type="password"], select, input[type="color"] {
             background-color: #374151; border: 1px solid #4b5563; color: #d1d5db; border-radius: 0.375rem; padding: 0.5rem; width: 100%;
         }
+        input[type="color"] { padding: 2px; }
         select:disabled { background-color: #1f2937; cursor: not-allowed; }
         .main-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; padding: 0.75rem 1.5rem;
@@ -121,9 +123,17 @@
         body[data-theme="gemini"] .date-heading {
             background: linear-gradient(to right, #4285F4, #8E44AD);
         }
+        
+        @keyframes fade-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
     </style>
 </head>
-<body class="text-gray-200" data-theme="red">
+<body class="text-gray-200" data-theme="gemini">
     <!-- This container will be populated by JS after password -->
     <div id="main-content" class="hidden">
         <div class="container mx-auto p-4 md:p-8 max-w-7xl">
@@ -154,8 +164,10 @@
                                 <button class="h-8 w-8 rounded-full bg-purple-500 border-2 border-transparent focus:border-white" onclick="switchTheme('purple')"></button>
                                 <button class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 border-2 border-transparent focus:border-white text-white" onclick="switchTheme('gemini')">✨</button>
                             </div>
-                            <label for="custom-color-picker" class="text-sm font-medium text-white">Apna Rang Chunein</label>
+                            <label for="custom-color-picker" class="text-sm font-medium text-white">Accent Colour</label>
                             <input type="color" id="custom-color-picker" class="w-full h-8 p-0 mt-1 cursor-pointer">
+                            <label for="background-color-picker" class="text-sm font-medium text-white mt-2 block">Background Colour</label>
+                            <input type="color" id="background-color-picker" class="w-full h-8 p-0 mt-1 cursor-pointer">
                         </div>
                     </div>
                 </div>
@@ -256,6 +268,7 @@
             </footer>
         </div>
     </div>
+    <audio id="error-sound" class="hidden"></audio>
 
     <script>
     // --- PASSWORD PROTECTION & INITIALIZATION ---
@@ -266,7 +279,17 @@
 
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:rgba(17,24,39,0.95); z-index:9999; display:flex; justify-content:center; align-items:center;";
-        overlay.innerHTML = `<div style="background-color:#1f2937; padding:30px; border-radius:10px; text-align:center; max-width:320px; width:90%; border: 1px solid #374151;"><h3 style="color:#ef4444; font-size:1.5rem; font-weight:bold; margin-bottom:1rem;">Enter Password</h3><input type="password" id="passInput" placeholder="••••••" style="width:100%; margin:10px 0;"/><button id="submitPass" class="main-btn w-full mt-3">Submit</button><p id="errorMsg" style="color:#f87171; margin-top:10px; display:none;"></p></div>`;
+        overlay.innerHTML = `
+            <div class="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl shadow-2xl border border-gray-700 text-center max-w-sm w-full animate-fade-in">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-500 mb-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+                </svg>
+                <h3 class="text-red-400 text-2xl font-bold mb-4">Authentication Required</h3>
+                <p class="text-gray-400 mb-6">Please enter the password to access the suite.</p>
+                <input type="password" id="passInput" placeholder="••••••" class="w-full mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"/>
+                <button id="submitPass" class="main-btn w-full">Unlock</button>
+                <p id="errorMsg" class="text-red-400 mt-4 h-5"></p>
+            </div>`;
         document.body.appendChild(overlay);
 
         const passInput = document.getElementById("passInput");
@@ -278,14 +301,33 @@
                 initializeApp();
             } else {
                 const msg = document.getElementById("errorMsg");
-                msg.innerText = "❌ Wrong Password !!";
-                msg.style.display = "block";
+                msg.innerText = "❌ कौन है रे !!";
+                playErrorSound();
             }
         };
         submitBtn.addEventListener("click", checkPassword);
         passInput.addEventListener("keyup", (event) => { if (event.key === "Enter") checkPassword(); });
         passInput.focus();
     });
+
+    function base64ToBlob(base64, contentType = 'audio/mpeg') {
+        const byteCharacters = atob(base64.split(',')[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        return new Blob([byteArray], { type: contentType });
+    }
+
+    function playErrorSound() {
+        const audioData = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//uQxAADDQAGAAlVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//uQ-AARAAAAAA4AAAAAD/+4DEAAAMAA0gAAABoYXBwbGUAAAAzLjEuMAAA/+4DEQAAAAgAAAAAQ29weXJpZ2h0IGV4Y2x1c2l2ZSBmb3IgQXBwbGUgQ29tcHV0ZXIsIEluYy4gMjAxMgAA/+4DEwAAAAgAAAAAQ29weXJpZ2h0IGV4Y2x1c2l2ZSBmb3IgQXBwbGUgQ29tcHV0ZXIsIEluYy4gMjAxMgAA/+4DEwAAAAgAAAAAQ29weXJpZ...=";
+        const audio = document.getElementById('error-sound');
+        const audioBlob = base64ToBlob(audioData);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audio.src = audioUrl;
+        audio.play().catch(e => console.error("Audio play failed:", e));
+    }
 
     function initializeApp() {
         initVlookupTool();
@@ -330,8 +372,12 @@
     }
 
     function initTheme() {
-        const savedThemeName = localStorage.getItem('selectedTheme') || 'red';
+        const savedThemeName = localStorage.getItem('selectedTheme') || 'gemini';
         const savedCustomColor = localStorage.getItem('customThemeColor');
+        const savedBackgroundColor = localStorage.getItem('customBackgroundColor') || '#111827';
+
+        document.body.style.backgroundColor = savedBackgroundColor;
+        document.getElementById('background-color-picker').value = savedBackgroundColor;
 
         if (savedCustomColor) {
             document.body.dataset.theme = 'custom';
@@ -371,6 +417,13 @@
             root.style.setProperty('--gemini-grad-to', color);
             localStorage.setItem('customThemeColor', color);
             localStorage.removeItem('selectedTheme');
+        });
+
+        const bgPicker = document.getElementById('background-color-picker');
+        bgPicker.addEventListener('input', (e) => {
+            const color = e.target.value;
+            document.body.style.backgroundColor = color;
+            localStorage.setItem('customBackgroundColor', color);
         });
     }
 
@@ -612,7 +665,7 @@ ${metricsJSON}`;
                 table { width: 100%; border-collapse: collapse; }
                 th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
                 th { background-color: #f2f2f2; font-weight: bold; }
-                h3 { text-align: center; background-color: var(--primary-color); color: white; padding: 10px; border-radius: 5px; }
+                h3 { text-align: center; background-color: ${getComputedStyle(document.documentElement).getPropertyValue('--primary-color')}; color: white; padding: 10px; border-radius: 5px; }
             </style>
         `);
         printWindow.document.write('</head><body>');
