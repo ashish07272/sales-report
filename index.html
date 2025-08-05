@@ -380,7 +380,7 @@
     }
 
     // --- SIM SALE REPORT LOGIC ---
-    let simReportSummaryText = "";
+    let simReportMetrics = {};
     function initSimSaleReport() {
         const uploadInput = document.getElementById('simReportFile');
         uploadInput.addEventListener('change', function (e) {
@@ -399,11 +399,15 @@
         });
 
         document.getElementById('analyzeReportBtn').addEventListener('click', async () => {
-            if (!simReportSummaryText) return;
+            if (Object.keys(simReportMetrics).length === 0) return;
             const analysisResultDiv = document.getElementById('simReportAnalysisResult');
             analysisResultDiv.innerHTML = '<div class="flex justify-center"><span class="loader"></span></div>';
             
-            const prompt = `Analyze the following daily SIM sales report summary. Identify key trends, top-performing retailers, and underperforming ones. Provide actionable suggestions to boost sales. Present the output in clear sections: Key Trends, Top Performers, Areas for Improvement, and Actionable Suggestions. Here is the summary:\n\n${simReportSummaryText}`;
+            const metricsJSON = JSON.stringify(simReportMetrics, null, 2);
+            const prompt = `You are a professional business analyst. Analyze the following SIM sales data metrics. Based on this data, identify key trends, highlight the top-performing and underperforming retailers, and provide concrete, actionable suggestions to boost overall sales. Structure your response clearly with headings for each section.
+
+Here are the metrics:
+${metricsJSON}`;
             
             const analysis = await callGeminiAPI(prompt, document.getElementById('analyzeReportBtn'));
             analysisResultDiv.innerText = analysis;
@@ -411,14 +415,28 @@
     }
 
     function displaySimReport(rawData) {
-        const grouped = {}; const cafTypesSet = new Set();
+        const grouped = {}; 
+        const cafTypesSet = new Set();
+        const overallRetailerTotals = {};
+        const overallCafTypeTotals = {};
+
         rawData.forEach(row => {
             let date;
             if (typeof row['Date'] === 'number') date = new Date(Math.round((row['Date'] - 25569) * 86400 * 1000)).toLocaleDateString('en-IN');
             else date = row['Date'] ? new Date(row['Date']).toLocaleDateString('en-IN') : 'Unknown';
+            
             const retailer = row['Retailer Name'] || 'Unknown';
             const type = (row['Type of CAF'] || 'N/A').toUpperCase();
-            if (type !== 'N/A') cafTypesSet.add(type);
+            
+            if (!overallRetailerTotals[retailer]) overallRetailerTotals[retailer] = 0;
+            overallRetailerTotals[retailer]++;
+
+            if (type !== 'N/A') {
+                if (!overallCafTypeTotals[type]) overallCafTypeTotals[type] = 0;
+                overallCafTypeTotals[type]++;
+                cafTypesSet.add(type);
+            }
+            
             if (!grouped[date]) grouped[date] = {};
             if (!grouped[date][retailer]) grouped[date][retailer] = {};
             if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
@@ -428,32 +446,39 @@
         const cafTypes = Array.from(cafTypesSet).sort();
         const container = document.getElementById('simReportContainer');
         container.innerHTML = '';
-        let summary = "SIM Sales Report Summary:\n\n";
 
         Object.keys(grouped).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
-            summary += `Date: ${date}\n`;
             let html = `<h3 class='date-heading'>${date}</h3><table><thead><tr><th>Retailer Name</th>`;
             cafTypes.forEach(type => { html += `<th>${type}</th>`; });
             html += '<th>Total</th></tr></thead><tbody>';
             const totals = new Array(cafTypes.length).fill(0); let grandTotal = 0;
             Object.keys(grouped[date]).sort().forEach(retailer => {
                 html += `<tr><td>${retailer}</td>`; let rowTotal = 0;
-                let details = [];
                 cafTypes.forEach((type, i) => {
                     const count = grouped[date][retailer][type] || 0;
-                    if (count > 0) details.push(`${type}: ${count}`);
                     rowTotal += count; totals[i] += count;
                     html += `<td>${count}</td>`;
                 });
-                summary += `- ${retailer}: ${details.join(', ')}, Total: ${rowTotal}\n`;
                 grandTotal += rowTotal; html += `<td>${rowTotal}</td></tr>`;
             });
             html += '<tr><th>Total</th>'; totals.forEach(t => html += `<th>${t}</th>`);
             html += `<th>${grandTotal}</th></tr></tbody></table>`;
             container.innerHTML += html;
-            summary += `\n`;
         });
-        simReportSummaryText = summary; // Store summary for analysis
+        
+        const sortedRetailers = Object.entries(overallRetailerTotals).sort(([,a],[,b]) => b-a);
+        simReportMetrics = {
+            totalDays: Object.keys(grouped).length,
+            totalSales: rawData.length,
+            salesByType: overallCafTypeTotals,
+            top5Retailers: sortedRetailers.slice(0, 5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
+            bottom5Retailers: sortedRetailers.slice(-5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
+            dailySales: Object.keys(grouped).reduce((acc, date) => {
+                acc[date] = Object.values(grouped[date]).reduce((sum, retailerData) => sum + Object.values(retailerData).reduce((a, b) => a + b, 0), 0);
+                return acc;
+            }, {})
+        };
+
         document.getElementById('simReportActions').classList.remove('hidden');
     }
 
