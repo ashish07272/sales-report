@@ -84,6 +84,29 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* New Animation and Color Styles */
+        @keyframes pulse-glow-cyan {
+            0%, 100% { box-shadow: 0 0 3px #67e8f9, 0 0 6px #67e8f9; }
+            50% { box-shadow: 0 0 8px #a5f3fc, 0 0 12px #a5f3fc; }
+        }
+        @keyframes pulse-glow-orange {
+            0%, 100% { box-shadow: 0 0 3px #fb923c, 0 0 6px #fb923c; }
+            50% { box-shadow: 0 0 8px #fdba74, 0 0 12px #fdba74; }
+        }
+        .info-widget {
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background-color: #1f2937;
+        }
+        .datetime-widget {
+            color: #67e8f9; /* cyan-300 */
+            animation: pulse-glow-cyan 5s infinite ease-in-out;
+        }
+        .weather-widget {
+            color: #fb923c; /* orange-400 */
+            animation: pulse-glow-orange 5s infinite ease-in-out;
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -95,6 +118,18 @@
                     All-in-One <span class="text-red-500">Business</span> Suite
                 </h1>
                 <p class="text-gray-400 mt-3 text-lg">VLOOKUP, SIM Report, and Mobile Sum Tool, powered by Gemini AI.</p>
+                
+                <!-- Date, Time, and Weather Display -->
+                <div id="info-bar" class="mt-6 flex justify-center items-center gap-4 md:gap-6 text-sm">
+                    <div id="datetime" class="info-widget datetime-widget flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                        <span id="time-display">Loading...</span>
+                    </div>
+                    <div id="weather" class="info-widget weather-widget flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+                        <span id="weather-display">Loading...</span>
+                    </div>
+                </div>
             </header>
 
             <!-- Tab Navigation -->
@@ -226,6 +261,9 @@
         initVlookupTool();
         initSimSaleReport();
         initMobileYogTool();
+        updateTime();
+        setInterval(updateTime, 1000);
+        fetchWeather();
     }
     
     function switchTab(tabName) {
@@ -235,11 +273,35 @@
         event.currentTarget.classList.add('active');
     }
 
+    // --- DATE, TIME, and WEATHER ---
+    function updateTime() {
+        const timeDisplay = document.getElementById('time-display');
+        if (timeDisplay) {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            timeDisplay.textContent = `${dateString} | ${timeString}`;
+        }
+    }
+
+    async function fetchWeather() {
+        const weatherDisplay = document.getElementById('weather-display');
+        if (weatherDisplay) {
+            const prompt = "What is the current weather in Sultanpur, Uttar Pradesh, India? Give ONLY the temperature in Celsius and a one-word description (e.g., '28°C, Clear'). Do not add any other text or explanation.";
+            const dummyElement = document.createElement('div');
+            const weatherData = await callGeminiAPI(prompt, dummyElement);
+            weatherDisplay.textContent = weatherData || "Weather unavailable";
+        }
+    }
+
     // --- GEMINI API CALL ---
     async function callGeminiAPI(prompt, buttonElement) {
         const originalButtonContent = buttonElement.innerHTML;
-        buttonElement.innerHTML = '<span class="loader"></span>';
-        buttonElement.disabled = true;
+        if (buttonElement.tagName === 'BUTTON') {
+            buttonElement.innerHTML = '<span class="loader"></span>';
+            buttonElement.disabled = true;
+        }
 
         const apiKey = ""; // API key will be injected by the environment
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
@@ -264,7 +326,7 @@
                 throw new Error(result.error?.message || `API Error: ${response.statusText}`);
             }
             
-            if (result.candidates && result.candidates.length > 0) {
+            if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts) {
                 return result.candidates[0].content.parts[0].text;
             } else {
                 console.warn("API response blocked or empty:", result);
@@ -274,8 +336,10 @@
             console.error("Gemini API call failed:", error);
             return `An error occurred while contacting the AI: ${error.message}`;
         } finally {
-            buttonElement.innerHTML = originalButtonContent;
-            buttonElement.disabled = false;
+            if (buttonElement.tagName === 'BUTTON') {
+                buttonElement.innerHTML = originalButtonContent;
+                buttonElement.disabled = false;
+            }
         }
     }
 
@@ -381,6 +445,30 @@
 
     // --- SIM SALE REPORT LOGIC ---
     let simReportMetrics = {};
+    
+    function findColumnName(headers, possibleNames) {
+        for (const header of headers) {
+            const lowerHeader = header.toLowerCase().trim().replace(/\s+/g, ' ');
+            for (const pName of possibleNames) {
+                if (lowerHeader.includes(pName)) {
+                    return header;
+                }
+            }
+        }
+        return null;
+    }
+
+    function parseDate(input) {
+        if (!input) return null;
+        if (input instanceof Date && !isNaN(input)) return input;
+        if (typeof input === 'number') return new Date(Date.UTC(1899, 11, 30) + input * 86400000);
+        if (typeof input === 'string') {
+            const d = new Date(input);
+            if (!isNaN(d)) return d;
+        }
+        return null;
+    }
+
     function initSimSaleReport() {
         const uploadInput = document.getElementById('simReportFile');
         uploadInput.addEventListener('change', function (e) {
@@ -390,7 +478,7 @@
             const reader = new FileReader();
             reader.onload = function (event) {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rawData = XLSX.utils.sheet_to_json(sheet);
                 displaySimReport(rawData);
@@ -415,21 +503,47 @@ ${metricsJSON}`;
     }
 
     function displaySimReport(rawData) {
-        const grouped = {}; 
+        const container = document.getElementById('simReportContainer');
+        container.innerHTML = '';
+        if (!rawData || rawData.length === 0) {
+            container.innerHTML = "<p class='text-center text-red-400'>No data found in the Excel file.</p>";
+            return;
+        }
+
+        const headers = Object.keys(rawData[0]);
+        const dateCol = findColumnName(headers, ['date']);
+        const retailerCol = findColumnName(headers, ['retailer name', 'retailer']);
+        const typeCol = findColumnName(headers, ['type of caf', 'caf type']);
+
+        if (!dateCol || !retailerCol || !typeCol) {
+            let missing = [!dateCol && "'Date'", !retailerCol && "'Retailer Name'", !typeCol && "'Type of CAF'"].filter(Boolean).join(', ');
+            container.innerHTML = `<p class='text-center text-red-400'>Error: Could not find required columns. Please make sure your file has columns like ${missing}.</p>`;
+            return;
+        }
+
+        const retailerSummary = {}; 
         const cafTypesSet = new Set();
         const overallRetailerTotals = {};
         const overallCafTypeTotals = {};
+        const groupedByDate = {};
 
         rawData.forEach(row => {
-            let date;
-            if (typeof row['Date'] === 'number') date = new Date(Math.round((row['Date'] - 25569) * 86400 * 1000)).toLocaleDateString('en-IN');
-            else date = row['Date'] ? new Date(row['Date']).toLocaleDateString('en-IN') : 'Unknown';
+            const d = parseDate(row[dateCol]);
+            const date = d ? d.toLocaleDateString('en-IN') : 'Unknown';
             
-            const retailer = row['Retailer Name'] || 'Unknown';
-            const type = (row['Type of CAF'] || 'N/A').toUpperCase();
+            const retailer = row[retailerCol] || 'Unknown';
+            const type = (row[typeCol] || 'N/A').toUpperCase();
             
-            if (!overallRetailerTotals[retailer]) overallRetailerTotals[retailer] = 0;
-            overallRetailerTotals[retailer]++;
+            if (retailer !== 'Unknown') {
+                if (!overallRetailerTotals[retailer]) overallRetailerTotals[retailer] = 0;
+                overallRetailerTotals[retailer]++;
+
+                if (!retailerSummary[retailer]) retailerSummary[retailer] = {};
+                if (type !== 'N/A') {
+                    if (!retailerSummary[retailer][type]) retailerSummary[retailer][type] = 0;
+                    retailerSummary[retailer][type]++;
+                }
+            }
 
             if (type !== 'N/A') {
                 if (!overallCafTypeTotals[type]) overallCafTypeTotals[type] = 0;
@@ -437,46 +551,65 @@ ${metricsJSON}`;
                 cafTypesSet.add(type);
             }
             
-            if (!grouped[date]) grouped[date] = {};
-            if (!grouped[date][retailer]) grouped[date][retailer] = {};
-            if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
-            grouped[date][retailer][type]++;
+            if (date !== 'Unknown') {
+                if (!groupedByDate[date]) groupedByDate[date] = {};
+                if (!groupedByDate[date][retailer]) groupedByDate[date][retailer] = {};
+                if (!groupedByDate[date][retailer][type]) groupedByDate[date][retailer][type] = 0;
+                groupedByDate[date][retailer][type]++;
+            }
         });
         
         const cafTypes = Array.from(cafTypesSet).sort();
-        const container = document.getElementById('simReportContainer');
-        container.innerHTML = '';
-
-        Object.keys(grouped).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
-            let html = `<h3 class='date-heading'>${date}</h3><table><thead><tr><th>Retailer Name</th>`;
-            cafTypes.forEach(type => { html += `<th>${type}</th>`; });
-            html += '<th>Total</th></tr></thead><tbody>';
-            const totals = new Array(cafTypes.length).fill(0); let grandTotal = 0;
-            Object.keys(grouped[date]).sort().forEach(retailer => {
-                html += `<tr><td>${retailer}</td>`; let rowTotal = 0;
-                cafTypes.forEach((type, i) => {
-                    const count = grouped[date][retailer][type] || 0;
-                    rowTotal += count; totals[i] += count;
-                    html += `<td>${count}</td>`;
-                });
-                grandTotal += rowTotal; html += `<td>${rowTotal}</td></tr>`;
-            });
-            html += '<tr><th>Total</th>'; totals.forEach(t => html += `<th>${t}</th>`);
-            html += `<th>${grandTotal}</th></tr></tbody></table>`;
-            container.innerHTML += html;
-        });
         
-        const sortedRetailers = Object.entries(overallRetailerTotals).sort(([,a],[,b]) => b-a);
+        let html = `<h3 class='date-heading'>Overall Summary Report</h3><table><thead><tr><th>Retailer Name</th>`;
+        cafTypes.forEach(type => { html += `<th>${type}</th>`; });
+        html += '<th>Total</th></tr></thead><tbody>';
+
+        const sortedRetailersByName = Object.keys(retailerSummary).sort();
+
+        sortedRetailersByName.forEach(retailer => {
+            html += `<tr><td>${retailer}</td>`;
+            let rowTotal = 0;
+            cafTypes.forEach(type => {
+                const count = retailerSummary[retailer][type] || 0;
+                rowTotal += count;
+                html += `<td>${count}</td>`;
+            });
+            html += `<td><b>${rowTotal}</b></td></tr>`;
+        });
+
+        html += '<tr><th>Total</th>';
+        let grandTotal = 0;
+        cafTypes.forEach(type => {
+            const typeTotal = overallCafTypeTotals[type] || 0;
+            grandTotal += typeTotal;
+            html += `<th>${typeTotal}</th>`;
+        });
+        html += `<th>${grandTotal}</th></tr></tbody></table>`;
+        
+        container.innerHTML = html;
+        
+        const sortedRetailersBySales = Object.entries(overallRetailerTotals).sort(([,a],[,b]) => b-a);
+        const dailySales = Object.keys(groupedByDate).reduce((acc, date) => {
+            acc[date] = Object.values(groupedByDate[date]).reduce((sum, retailerData) => sum + Object.values(retailerData).reduce((a, b) => a + b, 0), 0);
+            return acc;
+        }, {});
+
+        const dailyEntries = Object.entries(dailySales);
+        const peakSale = dailyEntries.length > 0 ? dailyEntries.reduce((max, entry) => entry[1] > max[1] ? entry : max, dailyEntries[0]) : ['N/A', 0];
+        const lowestSale = dailyEntries.length > 0 ? dailyEntries.reduce((min, entry) => entry[1] < min[1] ? entry : min, dailyEntries[0]) : ['N/A', 0];
+        const totalDays = Object.keys(groupedByDate).length;
+        const totalSales = rawData.length;
+
         simReportMetrics = {
-            totalDays: Object.keys(grouped).length,
-            totalSales: rawData.length,
+            totalDays: totalDays,
+            totalSales: totalSales,
+            averageDailySales: totalDays > 0 ? (totalSales / totalDays).toFixed(2) : 0,
             salesByType: overallCafTypeTotals,
-            top5Retailers: sortedRetailers.slice(0, 5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
-            bottom5Retailers: sortedRetailers.slice(-5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
-            dailySales: Object.keys(grouped).reduce((acc, date) => {
-                acc[date] = Object.values(grouped[date]).reduce((sum, retailerData) => sum + Object.values(retailerData).reduce((a, b) => a + b, 0), 0);
-                return acc;
-            }, {})
+            top5Retailers: sortedRetailersBySales.slice(0, 5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
+            bottom5Retailers: sortedRetailersBySales.slice(-5).reduce((obj, [key, value]) => ({...obj, [key]: value}), {}),
+            peakSaleDay: { date: peakSale[0], sales: peakSale[1] },
+            lowestSaleDay: { date: lowestSale[0], sales: lowestSale[1] }
         };
 
         document.getElementById('simReportActions').classList.remove('hidden');
