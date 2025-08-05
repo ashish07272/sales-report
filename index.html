@@ -257,19 +257,22 @@
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
-            }
-
             const result = await response.json();
+
+            if (!response.ok) {
+                console.error("API Error Response:", result);
+                throw new Error(result.error?.message || `API Error: ${response.statusText}`);
+            }
+            
             if (result.candidates && result.candidates.length > 0) {
                 return result.candidates[0].content.parts[0].text;
             } else {
-                return "Sorry, I couldn't get a response. Please try again.";
+                console.warn("API response blocked or empty:", result);
+                return "The request was processed, but the AI's response was blocked, possibly due to safety filters. Please try again with different data.";
             }
         } catch (error) {
             console.error("Gemini API call failed:", error);
-            return "An error occurred while contacting the AI. Please check the console for details.";
+            return `An error occurred while contacting the AI: ${error.message}`;
         } finally {
             buttonElement.innerHTML = originalButtonContent;
             buttonElement.disabled = false;
@@ -377,7 +380,7 @@
     }
 
     // --- SIM SALE REPORT LOGIC ---
-    let simReportGroupedData = {};
+    let simReportSummaryText = "";
     function initSimSaleReport() {
         const uploadInput = document.getElementById('simReportFile');
         uploadInput.addEventListener('change', function (e) {
@@ -396,11 +399,11 @@
         });
 
         document.getElementById('analyzeReportBtn').addEventListener('click', async () => {
+            if (!simReportSummaryText) return;
             const analysisResultDiv = document.getElementById('simReportAnalysisResult');
             analysisResultDiv.innerHTML = '<div class="flex justify-center"><span class="loader"></span></div>';
             
-            const simplifiedData = JSON.stringify(simReportGroupedData, null, 2);
-            const prompt = `Analyze the following daily SIM sales report data. Identify key trends, top-performing retailers, and underperforming ones. Provide actionable suggestions to boost sales. Present the output in clear sections: Key Trends, Top Performers, Areas for Improvement, and Actionable Suggestions. Here is the data:\n\n${simplifiedData}`;
+            const prompt = `Analyze the following daily SIM sales report summary. Identify key trends, top-performing retailers, and underperforming ones. Provide actionable suggestions to boost sales. Present the output in clear sections: Key Trends, Top Performers, Areas for Improvement, and Actionable Suggestions. Here is the summary:\n\n${simReportSummaryText}`;
             
             const analysis = await callGeminiAPI(prompt, document.getElementById('analyzeReportBtn'));
             analysisResultDiv.innerText = analysis;
@@ -421,28 +424,36 @@
             if (!grouped[date][retailer][type]) grouped[date][retailer][type] = 0;
             grouped[date][retailer][type]++;
         });
-        simReportGroupedData = grouped; // Store for analysis
+        
         const cafTypes = Array.from(cafTypesSet).sort();
         const container = document.getElementById('simReportContainer');
         container.innerHTML = '';
+        let summary = "SIM Sales Report Summary:\n\n";
+
         Object.keys(grouped).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
+            summary += `Date: ${date}\n`;
             let html = `<h3 class='date-heading'>${date}</h3><table><thead><tr><th>Retailer Name</th>`;
             cafTypes.forEach(type => { html += `<th>${type}</th>`; });
             html += '<th>Total</th></tr></thead><tbody>';
             const totals = new Array(cafTypes.length).fill(0); let grandTotal = 0;
             Object.keys(grouped[date]).sort().forEach(retailer => {
                 html += `<tr><td>${retailer}</td>`; let rowTotal = 0;
+                let details = [];
                 cafTypes.forEach((type, i) => {
                     const count = grouped[date][retailer][type] || 0;
+                    if (count > 0) details.push(`${type}: ${count}`);
                     rowTotal += count; totals[i] += count;
                     html += `<td>${count}</td>`;
                 });
+                summary += `- ${retailer}: ${details.join(', ')}, Total: ${rowTotal}\n`;
                 grandTotal += rowTotal; html += `<td>${rowTotal}</td></tr>`;
             });
             html += '<tr><th>Total</th>'; totals.forEach(t => html += `<th>${t}</th>`);
             html += `<th>${grandTotal}</th></tr></tbody></table>`;
             container.innerHTML += html;
+            summary += `\n`;
         });
+        simReportSummaryText = summary; // Store summary for analysis
         document.getElementById('simReportActions').classList.remove('hidden');
     }
 
